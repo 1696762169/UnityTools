@@ -2,8 +2,10 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+/// <summary>
+/// 全局单例对象基类
+/// </summary>
 public class SingletonBase<T> where T : SingletonBase<T>, new()
 {
-    protected static T instance = new T();
-    public static T Instance => instance;
+    public static T Instance { get; protected set; } = new T();
 }

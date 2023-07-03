@@ -4,84 +4,78 @@ using UnityEngine;
 using UnityEngine.Events;
 
 /// <summary>
-/// ÊÂ¼şÖĞĞÄÀà
+/// äº‹ä»¶ä¸­å¿ƒç±» ç”¨äºç®¡ç†å…¨å±€äº‹ä»¶
 /// </summary>
 public class EventMgr : SingletonBase<EventMgr>
 {
-    private Dictionary<string, IEventInfo> events = new Dictionary<string, IEventInfo>();
+    private readonly Dictionary<string, IEventInfo> m_Events = new();
 
     /// <summary>
-    /// ¶©ÔÄÊÂ¼ş
+    /// è®¢é˜…äº‹ä»¶
     /// </summary>
-    /// <param name="eventName">ÊÂ¼şÃû</param>
-    /// <param name="action">ĞèÒªÌí¼ÓµÄ¼àÌıº¯Êı</param>
+    /// <param name="eventName">äº‹ä»¶å</param>
+    /// <param name="action">éœ€è¦æ·»åŠ çš„ç›‘å¬å‡½æ•°</param>
     public void AddListener<T>(string eventName, UnityAction<T> action)
     {
-        if (events.ContainsKey(eventName) && events[eventName] as EventInfo<T> != null)
-            (events[eventName] as EventInfo<T>).actions += action;
-        else if (!events.ContainsKey(eventName))
-            events.Add(eventName, new EventInfo<T>(action));
+        if (m_Events.ContainsKey(eventName) && m_Events[eventName] is EventInfo<T> eventInfo)
+	        eventInfo.actions += action;
+        else if (!m_Events.ContainsKey(eventName))
+            m_Events.Add(eventName, new EventInfo<T>(action));
     }
     public void AddListener(string eventName, UnityAction action)
     {
-        if (events.ContainsKey(eventName) && events[eventName] as EventInfo != null)
-            (events[eventName] as EventInfo).actions += action;
-        else if (!events.ContainsKey(eventName))
-            events.Add(eventName, new EventInfo(action));
+        if (m_Events.ContainsKey(eventName) && m_Events[eventName] is EventInfo eventInfo)
+	        eventInfo.actions += action;
+        else if (!m_Events.ContainsKey(eventName))
+            m_Events.Add(eventName, new EventInfo(action));
     }
 
     /// <summary>
-    /// È¡Ïû¶©ÔÄÊÂ¼ş
+    /// å–æ¶ˆè®¢é˜…äº‹ä»¶
     /// </summary>
-    /// <param name="eventName">ÊÂ¼şÃû</param>
-    /// <param name="action">ĞèÒªÒÆ³ıµÄ¼àÌıº¯Êı</param>
+    /// <param name="eventName">äº‹ä»¶å</param>
+    /// <param name="action">éœ€è¦ç§»é™¤çš„ç›‘å¬å‡½æ•°</param>
     public void RemoveListener<T>(string eventName, UnityAction<T> action)
     {
-        if (events.ContainsKey(eventName) && events[eventName] as EventInfo<T> != null)
-            (events[eventName] as EventInfo<T>).actions -= action;
+        if (m_Events.ContainsKey(eventName) && m_Events[eventName] is EventInfo<T> eventInfo)
+	        eventInfo.actions -= action;
     }
     public void RemoveListener(string eventName, UnityAction action)
     {
-        if (events.ContainsKey(eventName) && events[eventName] as EventInfo != null)
-            (events[eventName] as EventInfo).actions -= action;
+        if (m_Events.ContainsKey(eventName) && m_Events[eventName] is EventInfo eventInfo)
+	        eventInfo.actions -= action;
     }
 
     /// <summary>
-    /// ´¥·¢Ò»¸öÊÂ¼ş
+    /// è§¦å‘ä¸€ä¸ªäº‹ä»¶
     /// </summary>
-    /// <param name="eventName">ÊÂ¼şÃû</param>
-    /// <param name="info">´¥·¢ÊÂ¼şÊ±´«ÈëµÄ²ÎÊı</param>
-    /// <returns>ÊÇ·ñ³É¹¦´¥·¢ ¼´ÊÇ·ñ´æÔÚ¸ÃÊÂ¼ş</returns>
+    /// <param name="eventName">äº‹ä»¶å</param>
+    /// <param name="info">è§¦å‘äº‹ä»¶æ—¶ä¼ å…¥çš„å‚æ•°</param>
+    /// <returns>æ˜¯å¦æˆåŠŸè§¦å‘ å³æ˜¯å¦å­˜åœ¨è¯¥äº‹ä»¶</returns>
     public bool TriggerEvent<T>(string eventName, T info)
     {
-        if (events.ContainsKey(eventName) && events[eventName] as EventInfo<T> != null && (events[eventName] as EventInfo<T>).actions != null)
-        {
-            (events[eventName] as EventInfo<T>).actions(info);
-            return true;
-        }
-        else
-            return false;
+	    if (!m_Events.ContainsKey(eventName) ||
+	        m_Events[eventName] is not EventInfo<T> { actions: not null } eventInfo) return false;
+	    eventInfo.actions(info);
+	    return true;
     }
     public bool TriggerEvent(string eventName)
     {
-        if (events.ContainsKey(eventName) && events[eventName] as EventInfo != null && (events[eventName] as EventInfo).actions != null)
-        {
-            (events[eventName] as EventInfo).actions();
-            return true;
-        }
-        else
-            return false;
+	    if (!m_Events.ContainsKey(eventName) ||
+	        m_Events[eventName] is not EventInfo { actions: not null } eventInfo) return false;
+	    eventInfo.actions();
+	    return true;
     }
 
     /// <summary>
-    /// Çå¿ÕÊÂ¼şÖĞĞÄ Ò»°ãÓÃÓÚ³¡¾°ÇĞ»»
+    /// æ¸…ç©ºäº‹ä»¶ä¸­å¿ƒ ä¸€èˆ¬ç”¨äºåœºæ™¯åˆ‡æ¢
     /// </summary>
     public void Clear()
     {
-        events.Clear();
+        m_Events.Clear();
     }
 
-    // Îª±ÜÃâ×°Ïä²ğÏä¶ø½øĞĞµÄ°ü¹ü
+    // ä¸ºé¿å…è£…ç®±æ‹†ç®±è€Œè¿›è¡Œçš„åŒ…è£¹
     private class EventInfo<T> : IEventInfo
     {
         public UnityAction<T> actions;

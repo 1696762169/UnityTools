@@ -4,47 +4,47 @@ using UnityEngine;
 using UnityEngine.Events;
 
 /// <summary>
-/// MonoÍ³Ò»¹ÜÀíÀà
-/// ¿ÉÒÔÊ¹µÃÃ»ÓĞ¼Ì³ĞMonoµÄÀàÒ²ÄÜ¹»½øĞĞÍ³Ò»µÄUpdate ÒÔ¼°¿ªÆôĞ­³Ì
+/// Monoç»Ÿä¸€ç®¡ç†ç±»
+/// å¯ä»¥ä½¿å¾—æ²¡æœ‰ç»§æ‰¿Monoçš„ç±»ä¹Ÿèƒ½å¤Ÿè¿›è¡Œç»Ÿä¸€çš„Update ä»¥åŠå¼€å¯åç¨‹
 /// </summary>
 public class MonoMgr : SingletonBase<MonoMgr>
 {
-    private MonoController controller;
+    private readonly MonoController m_Controller;
     public MonoMgr()
     {
         GameObject obj = new GameObject("MonoController");
-        controller = obj.AddComponent<MonoController>();
+        m_Controller = obj.AddComponent<MonoController>();
     }
 
-    /* ¶©ÔÄ/È¡Ïû¶©ÔÄControllerµÄÊÂ¼ş */
-    public void AddUpdateListener(UnityAction update) => controller.updateEvent += update;
-    public void RemoveUpdateListener(UnityAction update) => controller.updateEvent += update;
+    /* è®¢é˜…/å–æ¶ˆè®¢é˜…Controllerçš„äº‹ä»¶ */
+    public void AddUpdateListener(UnityAction update) => m_Controller.UpdateEvent += update;
+    public void RemoveUpdateListener(UnityAction update) => m_Controller.UpdateEvent -= update;
 
-    /* Ê¹ÓÃcontroller¼ä½ÓÊ¹ÓÃĞ­³Ì */
-    public Coroutine StartCoroutine(string routine) => controller.StartCoroutine(routine);
-    public Coroutine StartCoroutine(IEnumerator routine) => controller.StartCoroutine(routine);
-    public void StopAllCoroutines() => controller.StopAllCoroutines();
-    public void StopCoroutine(IEnumerator routine) => controller.StopCoroutine(routine);
-    public void StopCoroutine(Coroutine routine) => controller.StopCoroutine(routine);
-    public void StopCoroutine(string routine) => controller.StopCoroutine(routine);
+    /* ä½¿ç”¨controlleré—´æ¥ä½¿ç”¨åç¨‹ */
+    public Coroutine StartCoroutine(string routine) => m_Controller.StartCoroutine(routine);
+    public Coroutine StartCoroutine(IEnumerator routine) => m_Controller.StartCoroutine(routine);
+    public void StopAllCoroutines() => m_Controller.StopAllCoroutines();
+    public void StopCoroutine(IEnumerator routine) => m_Controller.StopCoroutine(routine);
+    public void StopCoroutine(Coroutine routine) => m_Controller.StopCoroutine(routine);
+    public void StopCoroutine(string routine) => m_Controller.StopCoroutine(routine);
 
     /// <summary>
-    /// ¼Ì³ĞMonoµÄÀà ÄÜ¹»µ÷ÓÃÉúÃüÖÜÆÚº¯Êı
+    /// ç»§æ‰¿Monoçš„ç±» èƒ½å¤Ÿè°ƒç”¨ç”Ÿå‘½å‘¨æœŸå‡½æ•°
     /// </summary>
+    // ReSharper disable once ClassNeverInstantiated.Local
     private class MonoController : MonoBehaviour
     {
-        public event UnityAction updateEvent;
+        public event UnityAction UpdateEvent;
 
-        // ×÷Îªµ¥ÀıÄ£Ê½µÄ¶ÔÏó ÇĞ»»³¡¾°Ê±Ò²²»ÒÆ³ı
+        // ä½œä¸ºå•ä¾‹æ¨¡å¼çš„å¯¹è±¡ åˆ‡æ¢åœºæ™¯æ—¶ä¹Ÿä¸ç§»é™¤
         protected void Start()
         {
             DontDestroyOnLoad(this.gameObject);
         }
-        // UpdateÊ±µ÷ÓÃËùÓĞµÄUpdateº¯Êı
+        // Updateæ—¶è°ƒç”¨æ‰€æœ‰çš„Updateå‡½æ•°
         protected void Update()
         {
-            if (updateEvent != null)
-                updateEvent();
+	        UpdateEvent?.Invoke();
         }
     }
 }

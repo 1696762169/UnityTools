@@ -2,18 +2,21 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+/// <summary>
+/// 鍏ㄥ眬鍗曚緥Mono瀵硅薄鍩虹被
+/// </summary>
 public class SingletonMono<T> : MonoBehaviour where T : SingletonMono<T>
 {
-    protected static T instance;
-    public static T Instance => instance;
+    public static T Instance { get; protected set; }
+
     protected virtual void Awake()
     {
-        if (instance == null)
+        if (Instance == null)
         {
-            instance = this as T;
+            Instance = this as T;
             DontDestroyOnLoad(this);
         }
         else
-            Debug.LogError($"单例模式类{typeof(T).Name}脚本被挂载了多次，挂载对象名：{name}");
+            Debug.LogError($"鍗曚緥妯″紡绫粄typeof(T).Name}鑴氭湰琚寕杞戒簡澶氭锛屾寕杞藉璞″悕锛歿name}");
     }
 }

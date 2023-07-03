@@ -1,68 +1,68 @@
 using System.Collections;
 using System.Collections.Generic;
+using JetBrains.Annotations;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Events;
 
+/// <summary>
+/// éŸ³é¢‘ç®¡ç†ç±»
+/// </summary>
 public class MusicMgr : SingletonBase<MusicMgr>
 {
-    // ±³¾°ÒôÀÖ´óĞ¡
+    // èƒŒæ™¯éŸ³ä¹å¤§å°
     public float MusicVolume
     {
         get => BGM.volume;
         set => BGM.volume = value;
     }
-    // ÒôĞ§´óĞ¡
+    // éŸ³æ•ˆå¤§å°
     public float SoundVolume
     {
-        get => soundVolume;
+        get => m_SoundVolume;
         set
         {
-            soundVolume = value;
-            foreach (GameObject sound in soundList)
+            m_SoundVolume = value;
+            foreach (GameObject sound in m_SoundList)
                 sound.GetComponent<AudioSource>().volume = value;
         }
     }
-    private float soundVolume;
+    private float m_SoundVolume;
 
-    // ±³¾°ÒôÀÖ¶ÔÏó
-    private AudioSource BGM;
-    // ÒôĞ§ÁĞ±í
-    private List<GameObject> soundList;
-    // ÒôĞ§ÔÚ»º´æ³ØÀïµÄÃû³Æ
-    private const string soundPool = "__Sound";
+    // èƒŒæ™¯éŸ³ä¹å¯¹è±¡
+    private readonly AudioSource BGM;
+    // éŸ³æ•ˆåˆ—è¡¨
+    private readonly List<GameObject> m_SoundList = new();
+    // éŸ³æ•ˆåœ¨ç¼“å­˜æ± é‡Œçš„åç§°
+    private const string SOUND_POOL = "__Sound";
 
     public MusicMgr()
     {
-        // ´´½¨±³¾°ÒôÀÖ¶ÔÏó
+        // åˆ›å»ºèƒŒæ™¯éŸ³ä¹å¯¹è±¡
         GameObject obj = new GameObject("BGM");
         BGM = obj.AddComponent<AudioSource>();
         BGM.loop = true;
-        GameObject.DontDestroyOnLoad(obj);
+        Object.DontDestroyOnLoad(obj);
 
-        // ´´½¨ÒôĞ§ÁĞ±í
-        soundList = new List<GameObject>();
-
-        // ¼ì²âÒôĞ§¶ÔÏóÊÇ·ñ²¥·ÅÍê Ïò»º´æ³Ø¹é»¹ÒôĞ§¶ÔÏó
+        // æ£€æµ‹éŸ³æ•ˆå¯¹è±¡æ˜¯å¦æ’­æ”¾å®Œ å‘ç¼“å­˜æ± å½’è¿˜éŸ³æ•ˆå¯¹è±¡
         MonoMgr.Instance.AddUpdateListener(() =>
         {
-            for (int i = soundList.Count - 1; i >= 0; i--)
+            for (int i = m_SoundList.Count - 1; i >= 0; i--)
             {
-                if (!soundList[i].GetComponent<AudioSource>().isPlaying)
+                if (!m_SoundList[i].GetComponent<AudioSource>().isPlaying)
                 {
-                    PoolMgr.Instance.Store(soundPool, soundList[i]);
-                    soundList.RemoveAt(i);
+                    PoolMgr.Instance.Store(SOUND_POOL, m_SoundList[i]);
+                    m_SoundList.RemoveAt(i);
                 }
             }
         });
-        BGM.volume = 0.5f;
-        soundVolume = 0.5f;
     }
 
-    #region ±³¾°ÒôÀÖ·½·¨
+    #region èƒŒæ™¯éŸ³ä¹æ–¹æ³•
     /// <summary>
-    /// ²¥·Å±³¾°ÒôÀÖ
+    /// æ’­æ”¾èƒŒæ™¯éŸ³ä¹
     /// </summary>
-    /// <param name="resPath">±³¾°ÒôÀÖÃû</param>
+    /// <param name="resPath">èƒŒæ™¯éŸ³ä¹å</param>
     public void PlayMusic(string resPath)
     {
         AudioClip clip = Resources.Load<AudioClip>(resPath);
@@ -70,9 +70,9 @@ public class MusicMgr : SingletonBase<MusicMgr>
         BGM.Play();
     }
     /// <summary>
-    /// ²¥·Å±³¾°ÒôÀÖ(Òì²½¼ÓÔØÒôÆµ)
+    /// æ’­æ”¾èƒŒæ™¯éŸ³ä¹(å¼‚æ­¥åŠ è½½éŸ³é¢‘)
     /// </summary>
-    /// <param name="resPath">±³¾°ÒôÀÖÃû</param>
+    /// <param name="resPath">èƒŒæ™¯éŸ³ä¹å</param>
     public void PlayMusicAsync(string resPath)
     {
         ResMgr.Instance.LoadAsync<AudioClip>(resPath, (clip) =>
@@ -82,21 +82,21 @@ public class MusicMgr : SingletonBase<MusicMgr>
         });
     }
     /// <summary>
-    /// Í£Ö¹²¥·Å±³¾°ÒôÀÖ
+    /// åœæ­¢æ’­æ”¾èƒŒæ™¯éŸ³ä¹
     /// </summary>
     public void StopMusic() => BGM.Stop();
     /// <summary>
-    /// ÔİÍ£²¥·Å±³¾°ÒôÀÖ
+    /// æš‚åœæ’­æ”¾èƒŒæ™¯éŸ³ä¹
     /// </summary>
     public void PauseMusic() => BGM.Pause();
     #endregion
 
-    #region ÒôĞ§·½·¨
+    #region éŸ³æ•ˆæ–¹æ³•
     /// <summary>
-    /// ²¥·ÅÒôĞ§
+    /// æ’­æ”¾éŸ³æ•ˆ
     /// </summary>
-    /// <param name="resPath">ÒôĞ§×ÊÔ´Â·¾¶</param>
-    /// <param name="isLoop">ÊÇ·ñÑ­»·²¥·Å</param>
+    /// <param name="resPath">éŸ³æ•ˆèµ„æºè·¯å¾„</param>
+    /// <param name="isLoop">æ˜¯å¦å¾ªç¯æ’­æ”¾</param>
     public GameObject PlaySound(string resPath, bool isLoop = false)
     {
         GameObject obj = ProcessSound(Resources.Load<AudioClip>(resPath), isLoop);
@@ -110,18 +110,18 @@ public class MusicMgr : SingletonBase<MusicMgr>
     }
 
     /// <summary>
-    /// ²¥·ÅÒôĞ§(Òì²½¼ÓÔØÒôÆµ)
+    /// æ’­æ”¾éŸ³æ•ˆ(å¼‚æ­¥åŠ è½½éŸ³é¢‘)
     /// </summary>
-    /// <param name="resPath">ÒôĞ§×ÊÔ´Â·¾¶</param>
-    /// <param name="isLoop">ÊÇ·ñÑ­»·²¥·Å</param>
+    /// <param name="resPath">éŸ³æ•ˆèµ„æºè·¯å¾„</param>
+    /// <param name="isLoop">æ˜¯å¦å¾ªç¯æ’­æ”¾</param>
+    /// <param name="callback">èµ„æºåŠ è½½åçš„å›è°ƒå‡½æ•°</param>
     public void PlaySoundAsync(string resPath, bool isLoop = false, UnityAction<GameObject> callback = null)
     {
         ResMgr.Instance.LoadAsync<AudioClip>(resPath, (clip) =>
         {
             GameObject obj = ProcessSound(clip, isLoop);
-            // ¶ÔÒôĞ§µÄÆäËü´¦Àí
-            if (callback != null)
-                callback(obj);
+            // å¯¹éŸ³æ•ˆçš„å…¶å®ƒå¤„ç†
+            callback?.Invoke(obj);
         });
     }
     public void PlaySoundAsync(string resPath, Vector3 position, bool isLoop = false, UnityAction<GameObject> callback = null)
@@ -130,32 +130,30 @@ public class MusicMgr : SingletonBase<MusicMgr>
         PlaySoundAsync(resPath, isLoop, callback);
     }
     /// <summary>
-    /// Í£Ö¹²¥·ÅÒôĞ§ Ïò»º´æ³Ø¹é»¹ÒôĞ§×é¼ş
+    /// åœæ­¢æ’­æ”¾éŸ³æ•ˆ å‘ç¼“å­˜æ± å½’è¿˜éŸ³æ•ˆç»„ä»¶
     /// </summary>
-    /// <param name="sound">ÒªÍ£Ö¹²¥·ÅµÄÒôĞ§¶ÔÏó</param>
+    /// <param name="sound">è¦åœæ­¢æ’­æ”¾çš„éŸ³æ•ˆå¯¹è±¡</param>
     public void StopSound(GameObject sound)
     {
-        if (soundList.Contains(sound))
-        {
-            sound.GetComponent<AudioSource>().Stop();
-            soundList.Remove(sound);
-            PoolMgr.Instance.Store(soundPool, sound);
-        }
+	    if (!m_SoundList.Contains(sound))
+		    return;
+	    sound.GetComponent<AudioSource>().Stop();
+	    m_SoundList.Remove(sound);
+	    PoolMgr.Instance.Store(SOUND_POOL, sound);
     }
 
     protected GameObject ProcessSound(AudioClip clip, bool isLoop)
     {
-        // ´Ó»º´æ³ØÖĞ¼ÓÔØ¶ÔÏó
-        GameObject obj = PoolMgr.Instance.Fetch(soundPool, true);
-        AudioSource sound = obj.GetComponent<AudioSource>();
-        if (sound == null)
-            sound = obj.AddComponent<AudioSource>();
-        // ÉèÖÃĞÂµÄÒôĞ§
+        // ä»ç¼“å­˜æ± ä¸­åŠ è½½å¯¹è±¡
+        GameObject obj = PoolMgr.Instance.Fetch(SOUND_POOL, true);
+        AudioSource sound = obj.GetOrAddComponent<AudioSource>();
+        
+        // è®¾ç½®æ–°çš„éŸ³æ•ˆ
         sound.clip = clip;
         sound.loop = isLoop;
-        sound.volume = soundVolume;
+        sound.volume = m_SoundVolume;
         sound.Play();
-        soundList.Add(obj);
+        m_SoundList.Add(obj);
         return obj;
     }
     #endregion

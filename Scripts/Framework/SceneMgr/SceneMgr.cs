@@ -5,42 +5,43 @@ using UnityEngine.Events;
 using UnityEngine.SceneManagement;
 
 /// <summary>
-/// ³¡¾°ÇĞ»»Ä£¿é
-/// ÓÃÓÚÔÚÇĞ»»³¡¾°Ê±½øĞĞÒ»Ğ©¼ÓÔØ
+/// åœºæ™¯åˆ‡æ¢æ¨¡å—
+/// ç”¨äºåœ¨åˆ‡æ¢åœºæ™¯æ—¶è¿›è¡Œä¸€äº›åŠ è½½
 /// </summary>
 public class SceneMgr : SingletonBase<SceneMgr>
 {
-    /* Í¬²½¼ÓÔØ³¡¾° */
-    public void LoadScene(int sceneBuildID, UnityAction action)
+	public const string LOADING_EVENT = "__SceneLoading";
+	/* åŒæ­¥åŠ è½½åœºæ™¯ */
+	public void LoadScene(int sceneBuildId, UnityAction action)
     {
-        SceneManager.LoadScene(sceneBuildID);
-        action();
+        SceneManager.LoadScene(sceneBuildId);
+        action?.Invoke();
     }
     public void LoadScene(string scene, UnityAction action)
     {
         LoadScene(SceneManager.GetSceneByName(scene).buildIndex,action);
     }
     
-    /* Òì²½¼ÓÔØ³¡¾° */
-    public void LoadSceneAsync(int sceneBuildID, UnityAction action)
+    /* å¼‚æ­¥åŠ è½½åœºæ™¯ */
+    public void LoadSceneAsync(int sceneBuildId, UnityAction action)
     {
-        MonoMgr.Instance.StartCoroutine(LoadCoroutine(sceneBuildID, action));
+        MonoMgr.Instance.StartCoroutine(LoadCoroutine(sceneBuildId, action));
     }
     public void LoadSceneAsync(string scene, UnityAction action)
     {
         LoadSceneAsync(SceneManager.GetSceneByName(scene).buildIndex,action);
     }
 
-    // Òì²½¼ÓÔØÊ±Ê¹ÓÃµÄĞ­³Ìº¯Êı
-    private IEnumerator LoadCoroutine(int sceneBuildID, UnityAction action)
+    // å¼‚æ­¥åŠ è½½æ—¶ä½¿ç”¨çš„åç¨‹å‡½æ•°
+    private IEnumerator LoadCoroutine(int sceneBuildId, UnityAction action)
     {
-        AsyncOperation ao = SceneManager.LoadSceneAsync(sceneBuildID);
+        AsyncOperation ao = SceneManager.LoadSceneAsync(sceneBuildId);
         while (!ao.isDone)
         {
-            // ²úÉúLoadingÊÂ¼ş
-            EventMgr.Instance.TriggerEvent("SceneLoading", ao.progress);
+            // äº§ç”ŸLoadingäº‹ä»¶
+            EventMgr.Instance.TriggerEvent(LOADING_EVENT, ao.progress);
             yield return ao.progress;
         }
-        action();
+        action?.Invoke();
     }
 }

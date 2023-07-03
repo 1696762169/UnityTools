@@ -4,35 +4,32 @@ using UnityEngine;
 using UnityEngine.Events;
 
 /// <summary>
-/// »º´æ³ØÀà
+/// ç¼“å­˜æ± ç±»
 /// </summary>
 public class PoolMgr : SingletonBase<PoolMgr>
 {
-    private GameObject poolParent;
-    private Dictionary<string, Pool> pools = new Dictionary<string, Pool>();
+    private readonly GameObject m_PoolParent;
+    private readonly Dictionary<string, Pool> m_Pools = new();
     public PoolMgr()
     {
-        poolParent = new GameObject("Pool");
-        GameObject.DontDestroyOnLoad(poolParent);
+        m_PoolParent = new GameObject("Pool");
+        Object.DontDestroyOnLoad(m_PoolParent);
     }
 
     /// <summary>
-    /// ´Ó»º´æ³ØÖĞÍ¬²½»ñÈ¡¶ÔÏó
+    /// ä»ç¼“å­˜æ± ä¸­åŒæ­¥è·å–å¯¹è±¡
     /// </summary>
-    /// <param name="resPath">ResourcesÎÄ¼ş¼ĞÖĞµÄ×ÊÔ´Â·¾¶</param>
-    /// <param name="empty">ÊÇ·ñ¼ÓÔØÒ»¸ö¿Õ¶ÔÏó</param>
+    /// <param name="resPath">Resourcesæ–‡ä»¶å¤¹ä¸­çš„èµ„æºè·¯å¾„</param>
+    /// <param name="empty">æ˜¯å¦åŠ è½½ä¸€ä¸ªç©ºå¯¹è±¡</param>
     public GameObject Fetch(string resPath, bool empty = false)
     {
-        if (pools.ContainsKey(resPath) && pools[resPath].Count > 0)
-            return pools[resPath].Pop();
-        else if (empty)
-            return new GameObject(resPath);
-        else
-        {
-            GameObject ret = ResMgr.Instance.Load<GameObject>(resPath);
-            ret.name = resPath;
-            return ret;
-        }
+	    if (m_Pools.ContainsKey(resPath) && m_Pools[resPath].Count > 0)
+            return m_Pools[resPath].Pop();
+	    if (empty)
+		    return new GameObject(resPath);
+	    GameObject ret = ResMgr.Instance.Load<GameObject>(resPath);
+	    ret.name = resPath;
+	    return ret;
     }
     public GameObject Fetch(string resPath, Vector3 position, Quaternion rotation, bool empty = false)
     {
@@ -42,33 +39,30 @@ public class PoolMgr : SingletonBase<PoolMgr>
         return obj;
     }
 
-    /// <summary>
-    /// ´Ó»º´æ³ØÖĞÒì²½»ñÈ¡¶ÔÏó
-    /// </summary>
-    /// <param name="resPath">ResourcesÎÄ¼ş¼ĞÖĞµÄ×ÊÔ´Â·¾¶</param>
-    /// <param name="empty">ÊÇ·ñ´´½¨Ò»¸ö¿Õ¶ÔÏó ÎŞĞè´ÓResourcesÀï¼ÓÔØ</param>
-    public void FetchAsync(string resPath, UnityAction<GameObject> callback = null)
+	/// <summary>
+	/// ä»ç¼“å­˜æ± ä¸­å¼‚æ­¥è·å–å¯¹è±¡
+	/// </summary>
+	/// <param name="resPath">Resourcesæ–‡ä»¶å¤¹ä¸­çš„èµ„æºè·¯å¾„</param>
+	/// <param name="callback">åŠ è½½å®Œæ¯•åçš„å¤„ç†</param>
+	public void FetchAsync(string resPath, UnityAction<GameObject> callback = null)
     {
-        if (pools.ContainsKey(resPath) && pools[resPath].Count > 0)
+        if (m_Pools.ContainsKey(resPath) && m_Pools[resPath].Count > 0)
         {
-            if (callback != null)
-                callback(pools[resPath].Pop());
-            else
-                pools[resPath].Pop();
+	        GameObject obj = m_Pools[resPath].Pop();
+	        callback?.Invoke(obj);
         }
         else
         {
             ResMgr.Instance.LoadAsync<GameObject>(resPath, (obj) =>
             {
-                // ½«ĞÂ¶ÔÏóÃû¸ÃÎª±¾»º´æ³ØµÄÃû×Ö ·½±ã¹é»¹
+                // å°†æ–°å¯¹è±¡åè¯¥ä¸ºæœ¬ç¼“å­˜æ± çš„åå­— æ–¹ä¾¿å½’è¿˜
                 obj.name = resPath;
-                if (callback != null)
-                    callback(obj);
+                callback?.Invoke(obj);
             });
         }
     }
     /// <summary>
-    /// ´Ó»º´æ³ØÖĞÒì²½»ñÈ¡¶ÔÏó ²¢ÉèÖÃ¸Ã¶ÔÏóÎ»ÖÃÓëĞı×ªĞÅÏ¢
+    /// ä»ç¼“å­˜æ± ä¸­å¼‚æ­¥è·å–å¯¹è±¡ å¹¶è®¾ç½®è¯¥å¯¹è±¡ä½ç½®ä¸æ—‹è½¬ä¿¡æ¯
     /// </summary>
     public void FetchAsync(string resPath, Vector3 position, Quaternion rotation, UnityAction<GameObject> callback = null)
     {
@@ -81,65 +75,61 @@ public class PoolMgr : SingletonBase<PoolMgr>
     }
 
     /// <summary>
-    /// Ïò»º´æ³Ø¹é»¹¶ÔÏó
+    /// å‘ç¼“å­˜æ± å½’è¿˜å¯¹è±¡
     /// </summary>
-    /// <param name="resPath">ResourcesÎÄ¼ş¼ĞÖĞµÄ×ÊÔ´Â·¾¶</param>
-    /// <param name="obj">´ı¹é»¹µÄÎïÌå</param>
+    /// <param name="resPath">Resourcesæ–‡ä»¶å¤¹ä¸­çš„èµ„æºè·¯å¾„</param>
+    /// <param name="obj">å¾…å½’è¿˜çš„ç‰©ä½“</param>
     public void Store(string resPath, GameObject obj)
     {
-        if (!pools.ContainsKey(resPath))
+        if (!m_Pools.ContainsKey(resPath))
         {
-            // ´´½¨»º´æ³ØºÍ³¡¾°ÉÏµÄ¸¸¶ÔÏó
-            GameObject parent = new GameObject(resPath);
-            parent.transform.parent = poolParent.transform;
-            pools.Add(resPath, new Pool(parent.transform));
+            // åˆ›å»ºç¼“å­˜æ± å’Œåœºæ™¯ä¸Šçš„çˆ¶å¯¹è±¡
+            GameObject parent = new(resPath);
+            parent.transform.SetParent(m_PoolParent.transform);
+            m_Pools.Add(resPath, new Pool(parent.transform));
         }
-        pools[resPath].Push(obj);
+        m_Pools[resPath].Push(obj);
     }
 
     /// <summary>
-    /// Çå³ı»º´æ³ØÖĞµÄÈ«²¿ÄÚÈİ
+    /// æ¸…é™¤ç¼“å­˜æ± ä¸­çš„å…¨éƒ¨å†…å®¹
     /// </summary>
     public void Clear()
     {
-        foreach (Pool pool in pools.Values)
-            GameObject.Destroy(pool.parent);
-        pools.Clear();
+        foreach (string resPath in m_Pools.Keys)
+            Clear(resPath);
     }
     /// <summary>
-    /// Çå³ıµ¥¸ö»º´æ³ØÖĞµÄÄÚÈİ
+    /// æ¸…é™¤å•ä¸ªç¼“å­˜æ± ä¸­çš„å†…å®¹
     /// </summary>
     public void Clear(string resPath)
     {
-        if (pools.ContainsKey(resPath))
-        {
-            GameObject.Destroy(pools[resPath].parent);
-            pools.Remove(resPath);
-        }
+	    if (!m_Pools.ContainsKey(resPath)) return;
+	    Object.Destroy(m_Pools[resPath].parent.gameObject);
+	    m_Pools.Remove(resPath);
     }
 
     private class Pool
     {
-        private Stack<GameObject> objs;
-        public int Count => objs.Count;
-        public Transform parent;
+	    private readonly Stack<GameObject> m_Objs = new();
+        public int Count => m_Objs.Count;
+        public readonly Transform parent;
 
         public Pool(Transform parent)
         {
             this.parent = parent;
-            objs = new Stack<GameObject>();
         }
         public void Push(GameObject obj)
         {
-            // ½«´æ´¢ºóµÄ¶ÔÏóÊ§»î
+            // å°†å­˜å‚¨åçš„å¯¹è±¡å¤±æ´»
             obj.SetActive(false);
-            obj.transform.parent = parent;
-            objs.Push(obj);
+            obj.transform.SetParent(parent);
+            m_Objs.Push(obj);
         }
         public GameObject Pop()
         {
-            GameObject ret = objs.Pop();
-            // ¼¤»îÈ¡³öµÄ¶ÔÏó
+            GameObject ret = m_Objs.Pop();
+            // æ¿€æ´»å–å‡ºçš„å¯¹è±¡
             ret.SetActive(true);
             return ret;
         }

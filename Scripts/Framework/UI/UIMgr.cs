@@ -1,49 +1,54 @@
 using System.Collections;
 using System.Collections.Generic;
+using JetBrains.Annotations;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.EventSystems;
 
+/// <summary>
+/// UIé¢æ¿ç®¡ç†å™¨
+/// </summary>
+// ReSharper disable once InconsistentNaming
 public class UIMgr : SingletonBase<UIMgr>
 {
-    // Canvas¶ÔÏóµÄÎ»ÖÃ
-    public RectTransform Canvas { get; protected set; }
-    // CanvasÉÏÏÔÊ¾²»Í¬Ãæ°åµÄ²ã¼¶Î»ÖÃ
-    protected List<Transform> m_Layers = new List<Transform>();
-    // CanvasÉÏÒÑ¾­¼ÓÔØ³öµÄÃæ°å
-    protected Dictionary<string, PanelBase> m_Panel = new Dictionary<string, PanelBase>();
+    // Canvaså¯¹è±¡çš„ä½ç½®
+    public RectTransform Canvas { get; private set; }
+    // Canvasä¸Šæ˜¾ç¤ºä¸åŒé¢æ¿çš„å±‚çº§ä½ç½®
+    private readonly List<Transform> m_Layers = new();
+	// Canvasä¸Šå·²ç»åŠ è½½å‡ºçš„é¢æ¿
+	private readonly Dictionary<string, PanelBase> m_Panel = new();
     public UIMgr()
     {
-        // ³¢ÊÔ»ñÈ¡³¡¾°ÉÏµÄCanvasºÍEventSystem¶ÔÏó
+        // å°è¯•è·å–åœºæ™¯ä¸Šçš„Canvaså’ŒEventSystemå¯¹è±¡
         GameObject canvas = null, es = null;
-        if (GameObject.FindObjectOfType<Canvas>() != null)
-            canvas = GameObject.FindObjectOfType<Canvas>().gameObject;
-        if (GameObject.FindObjectOfType<EventSystem>() != null)
-            es = GameObject.FindObjectOfType<EventSystem>().gameObject;
+        if (Object.FindObjectOfType<Canvas>() != null)
+            canvas = Object.FindObjectOfType<Canvas>().gameObject;
+        if (Object.FindObjectOfType<EventSystem>() != null)
+            es = Object.FindObjectOfType<EventSystem>().gameObject;
 
-        // ³¢ÊÔ´ÓResourcesÀï¼ÓÔØ¶ÔÏó
+        // å°è¯•ä»Resourcesé‡ŒåŠ è½½å¯¹è±¡
         if (canvas == null)
-            canvas = ResMgr.Instance.Load<GameObject>("UI/Canvas");
+            canvas = ResMgr.Instance.Load<GameObject>(PanelPath.CANVAS);
         if (es == null)
-            es = ResMgr.Instance.Load<GameObject>("UI/EventSystem");
+            es = ResMgr.Instance.Load<GameObject>(PanelPath.EVENT_SYSTEM);
 
-        // ¼ì²éÊÇ·ñ¼ÓÔØ³É¹¦
+        // æ£€æŸ¥æ˜¯å¦åŠ è½½æˆåŠŸ
         if (canvas == null)
         {
-            Debug.LogError("³¡¾°ÉÏÃ»ÓĞ´øÓĞCanvas×é¼şµÄ¶ÔÏó ResourcesÖĞÃ»ÓĞUI/Canvas¶ÔÏó ÎŞ·¨³õÊ¼»¯UIMgr");
+            Debug.LogError("åœºæ™¯ä¸Šæ²¡æœ‰å¸¦æœ‰Canvasç»„ä»¶çš„å¯¹è±¡ Resourcesä¸­æ²¡æœ‰UI/Canvaså¯¹è±¡ æ— æ³•åˆå§‹åŒ–UIMgr");
             return;
         }
         if (es == null)
         {
-            Debug.LogError("³¡¾°ÉÏÃ»ÓĞ´øÓĞEventSystem×é¼şµÄ¶ÔÏó ResourcesÖĞÃ»ÓĞUI/EventSystem¶ÔÏó ÎŞ·¨³õÊ¼»¯UIMgr");
+            Debug.LogError("åœºæ™¯ä¸Šæ²¡æœ‰å¸¦æœ‰EventSystemç»„ä»¶çš„å¯¹è±¡ Resourcesä¸­æ²¡æœ‰UI/EventSystemå¯¹è±¡ æ— æ³•åˆå§‹åŒ–UIMgr");
             return;
         }
 
-        // ·ÀÖ¹¶ÔÏó±»Ïú»Ù
-        GameObject.DontDestroyOnLoad(canvas);
-        GameObject.DontDestroyOnLoad(es);
+        // é˜²æ­¢å¯¹è±¡è¢«é”€æ¯
+        Object.DontDestroyOnLoad(canvas);
+        Object.DontDestroyOnLoad(es);
 
-        // ¼ÇÂ¼Î»ÖÃ
+        // è®°å½•ä½ç½®
         this.Canvas = canvas.transform as RectTransform;
         if (canvas.transform.childCount == 0)
             m_Layers.Add(canvas.transform);
@@ -53,20 +58,21 @@ public class UIMgr : SingletonBase<UIMgr>
     }
 
     /// <summary>
-    /// ´ÓResourcesÀï¼ÓÔØ²¢´ò¿ªÃæ°å
+    /// ä»Resourcesé‡ŒåŠ è½½å¹¶æ‰“å¼€é¢æ¿
     /// </summary>
-    /// <param name="panelPath">Ãæ°åÔÚResourcesÖĞµÄÂ·¾¶</param>
-    /// <param name="layer">Ãæ°åÔÚCanvasÖĞµÄ²ã¼¶</param>
+    /// <param name="panelPath">é¢æ¿åœ¨Resourcesä¸­çš„è·¯å¾„</param>
+    /// <param name="layer">é¢æ¿åœ¨Canvasä¸­çš„å±‚çº§</param>
     public GameObject ShowPanel<T>(string panelPath, int layer = 0) where T : PanelBase
     {
         return ProcessPanel<T>(ResMgr.Instance.Load<GameObject>(panelPath), panelPath, layer);
     }
 
     /// <summary>
-    /// ´ÓResourcesÀï¼ÓÔØ²¢´ò¿ªÃæ°å(Òì²½¼ÓÔØÃæ°å)
+    /// ä»Resourcesé‡ŒåŠ è½½å¹¶æ‰“å¼€é¢æ¿(å¼‚æ­¥åŠ è½½é¢æ¿)
     /// </summary>
-    /// <param name="panelPath">Ãæ°åÔÚResourcesÖĞµÄÂ·¾¶</param>
-    /// <param name="layer">Ãæ°åÔÚCanvasÖĞµÄ²ã¼¶</param>
+    /// <param name="panelPath">é¢æ¿åœ¨Resourcesä¸­çš„è·¯å¾„</param>
+    /// <param name="layer">é¢æ¿åœ¨Canvasä¸­çš„å±‚çº§</param>
+    /// <param name="callback">å›è°ƒå‡½æ•°</param>
     public void ShowPanelAsync<T>(string panelPath, int layer = 0, UnityAction<T> callback = null) where T : PanelBase
     {
         ResMgr.Instance.LoadAsync<GameObject>(panelPath, (obj) =>
@@ -77,10 +83,10 @@ public class UIMgr : SingletonBase<UIMgr>
     }
 
     /// <summary>
-    /// »ñÈ¡Ãæ°å
+    /// è·å–é¢æ¿
     /// </summary>
-    /// <param name="panelName">Ãæ°å¶ÔÏóÃû³Æ null±íÊ¾Ê¹ÓÃÀàĞÍÃû</param>
-    /// <returns>Î´ÕÒµ½Ãæ°åÊ±·µ»Ønull</returns>
+    /// <param name="panelName">é¢æ¿å¯¹è±¡åç§° nullè¡¨ç¤ºä½¿ç”¨ç±»å‹å</param>
+    /// <returns>æœªæ‰¾åˆ°é¢æ¿æ—¶è¿”å›null</returns>
     public T GetPanel<T>(string panelName = null) where T : PanelBase
     {
         string key = panelName ?? typeof(T).Name;
@@ -89,45 +95,44 @@ public class UIMgr : SingletonBase<UIMgr>
     }
 
     /// <summary>
-    /// ¹Ø±Õ²¢Ïú»ÙÃæ°å
+    /// å…³é—­å¹¶é”€æ¯é¢æ¿
     /// </summary>
     public void HidePanel<T>(string panelName = null)
     {
         string key = panelName ?? typeof(T).Name;
-        if (m_Panel.ContainsKey(key))
-        {
-            m_Panel[key].Hide();
-            GameObject.Destroy(m_Panel[key].gameObject);
-            m_Panel.Remove(key);
-        }
+        if (!m_Panel.ContainsKey(key)) 
+	        return;
+        m_Panel[key].Hide();
+        Object.Destroy(m_Panel[key].gameObject);
+        m_Panel.Remove(key);
     }
 
     protected GameObject ProcessPanel<T>(GameObject obj, string panelPath, int layer = 0) where T : PanelBase
     {
-        // ÉèÖÃ¸¸¶ÔÏó
+        // è®¾ç½®çˆ¶å¯¹è±¡
         if (layer < 0 || layer >= m_Layers.Count)
         {
-            Debug.LogWarning($"Ãæ°å{panelPath}²ã¼¶ÓĞÎó");
+            Debug.LogWarning($"é¢æ¿{panelPath}å±‚çº§æœ‰è¯¯");
             layer = 0;
         }
         obj.transform.SetParent(m_Layers[layer]);
+        obj.name = typeof(T).Name;
 
-        // ÉèÖÃ³õÊ¼Î»ÖÃ
+        // è®¾ç½®åˆå§‹ä½ç½®
         obj.transform.localPosition = Vector3.zero;
         obj.transform.localScale = Vector3.one;
         (obj.transform as RectTransform).offsetMax = Vector2.zero;
         (obj.transform as RectTransform).offsetMin = Vector2.zero;
 
-        // µ÷ÓÃÃæ°åÏÔÊ¾º¯Êı
-        T panel = obj.GetComponent<T>();
-        if (panel == null)
+        // è°ƒç”¨é¢æ¿æ˜¾ç¤ºå‡½æ•°
+        if (!obj.TryGetComponent(out T panel))
         {
-            Debug.LogError($"¶ÔÏó{obj.name}²»ÊÇ{typeof(T).Name}Ãæ°å");
+            Debug.LogError($"å¯¹è±¡{obj.name}ä¸æ˜¯{typeof(T).Name}é¢æ¿");
             return null;
         }
         panel.Show();
 
-        // ¼ÇÂ¼Ãæ°å
+        // è®°å½•é¢æ¿
         m_Panel.Add(panel.name, panel);
         return obj;
     }

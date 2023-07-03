@@ -2,6 +2,7 @@
 //#define DEBUG_MULTI
 using System;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.EventSystems;
@@ -9,16 +10,16 @@ using UnityEngine.UI;
 
 public abstract class PanelBase : MonoBehaviour
 {
-    // ´æ´¢¿Ø¼şµÄ×Öµä
-    private Dictionary<Type, Dictionary<string, UIBehaviour>> m_Elements = new Dictionary<Type, Dictionary<string, UIBehaviour>>();
+    // å­˜å‚¨æ§ä»¶çš„å­—å…¸
+    private readonly Dictionary<Type, Dictionary<string, UIBehaviour>> m_Elements = new();
 
-    // ´ËÀàÖ§³Ö·ÃÎÊµÄ¿Ø¼şÀàĞÍ
+    // æ­¤ç±»æ”¯æŒè®¿é—®çš„æ§ä»¶ç±»å‹
     public static readonly Type[] SupportTypes = { 
-        // »ù´¡¿Ø¼ş
+        // åŸºç¡€æ§ä»¶
         typeof(Image),
         typeof(Text),
         typeof(RawImage),
-        // ×éºÏ¿Ø¼ş
+        // ç»„åˆæ§ä»¶
         typeof(Button),
         typeof(Toggle),
         typeof(InputField),
@@ -34,25 +35,25 @@ public abstract class PanelBase : MonoBehaviour
     }
 
     /// <summary>
-    /// µÃµ½¸ÃÃæ°åÉÏ¼ÇÂ¼µÄÄ³Ò»ÀàĞÍµÄ¿Ø¼ş
+    /// å¾—åˆ°è¯¥é¢æ¿ä¸Šè®°å½•çš„æŸä¸€ç±»å‹çš„æ§ä»¶
     /// </summary>
-    /// <typeparam name="T">¿Ø¼şÀàĞÍ</typeparam>
-    /// <param name="elementName">¿Ø¼şÃû</param>
+    /// <typeparam name="T">æ§ä»¶ç±»å‹</typeparam>
+    /// <param name="elementName">æ§ä»¶å</param>
     public T GetElement<T>(string elementName) where T : UIBehaviour
     {
-        // ¼ì²éÊÇ·ñ´æÔÚ¸ÃÀàĞÍ¿Ø¼ş
+        // æ£€æŸ¥æ˜¯å¦å­˜åœ¨è¯¥ç±»å‹æ§ä»¶
         if (m_Elements.ContainsKey(typeof(T)))
         {
-            // »ñÈ¡Í¬Ãû¿Ø¼ş
+            // è·å–åŒåæ§ä»¶
             m_Elements[typeof(T)].TryGetValue(elementName, out UIBehaviour element);
 #if DEBUG_PANELBASE && UNITY_EDITOR
             if (element == null)
-                Debug.LogError($"Ãæ°å{this.name}ÉÏÃ»ÓĞÃûÎª{elementName}µÄ{typeof(T).Name}¿Ø¼ş");
+                Debug.LogError($"é¢æ¿{this.name}ä¸Šæ²¡æœ‰åä¸º{elementName}çš„{typeof(T).Name}æ§ä»¶");
 #endif
             return element as T;
         }
 
-        // Ã»ÓĞÕÒµ½¸ÃÀàĞÍµÄ¿Ø¼şÊ± ¼ì²é×ÔÉíÊÇ·ñÖ§³Ö¸ÃÀàĞÍ
+        // æ²¡æœ‰æ‰¾åˆ°è¯¥ç±»å‹çš„æ§ä»¶æ—¶ æ£€æŸ¥è‡ªèº«æ˜¯å¦æ”¯æŒè¯¥ç±»å‹
         else
         {
 #if DEBUG_PANELBASE && UNITY_EDITOR
@@ -66,58 +67,60 @@ public abstract class PanelBase : MonoBehaviour
                 }
             }
             if (support)
-                Debug.LogError($"Ãæ°å{this.name}ÉÏÃ»ÓĞ{typeof(T).Name}¿Ø¼ş");
+                Debug.LogError($"é¢æ¿{this.name}ä¸Šæ²¡æœ‰{typeof(T).Name}æ§ä»¶");
             else
-                Debug.LogError($"PanelBase²»Ö§³Ö¼ÇÂ¼{typeof(T).Name}¿Ø¼ş");
+                Debug.LogError($"PanelBaseä¸æ”¯æŒè®°å½•{typeof(T).Name}æ§ä»¶");
 #endif
             return null;
         }
     }
 
     /// <summary>
-    /// ÎªÒ»¸ö¿Ø¼şÌí¼ÓEventTriggerÊÂ¼ş
+    /// ä¸ºä¸€ä¸ªæ§ä»¶æ·»åŠ EventTriggeräº‹ä»¶
     /// </summary>
-    /// <typeparam name="T">¿Ø¼şÀàĞÍ</typeparam>
-    /// <param name="name">¿Ø¼şÃû</param>
-    /// <param name="eventID">ÊÂ¼şÀàĞÍ</param>
-    /// <param name="func">ÊÂ¼ş´¥·¢Ê±µÄ´¦Àíº¯Êı</param>
-    public void AddEntry<T>(string name, EventTriggerType eventID, UnityAction<BaseEventData> func) where T : UIBehaviour
+    /// <typeparam name="T">æ§ä»¶ç±»å‹</typeparam>
+    /// <param name="elementName">æ§ä»¶å</param>
+    /// <param name="eventID">äº‹ä»¶ç±»å‹</param>
+    /// <param name="func">äº‹ä»¶è§¦å‘æ—¶çš„å¤„ç†å‡½æ•°</param>
+    public void AddEntry<T>(string elementName, EventTriggerType eventID, UnityAction<BaseEventData> func) where T : UIBehaviour
     {
-        T element = GetElement<T>(name);
+        T element = GetElement<T>(elementName);
         if (element == null)
             return;
 
-        // Ìí¼ÓEventTrigger×é¼ş
-        EventTrigger trigger = element.GetComponent<EventTrigger>();
-        if (trigger == null)
-            trigger = element.gameObject.AddComponent<EventTrigger>();
-        // Ìí¼ÓEntry
-        EventTrigger.Entry entry = new EventTrigger.Entry();
-        entry.eventID = eventID;
+        // æ·»åŠ EventTriggerç»„ä»¶
+        EventTrigger trigger = element.GetOrAddComponent<EventTrigger>();
+        // æ·»åŠ Entry
+        EventTrigger.Entry entry = new()
+        {
+	        eventID = eventID
+        };
         entry.callback.AddListener(func);
         trigger.triggers.Add(entry);
     }
 
     /// <summary>
-    /// ÏÔÊ¾´ËÃæ°å
+    /// æ˜¾ç¤ºæ­¤é¢æ¿
     /// </summary>
     public abstract void Show();
     /// <summary>
-    /// Òş²Ø´ËÃæ°å
+    /// éšè—æ­¤é¢æ¿
     /// </summary>
     public abstract void Hide();
     
-    // ¼ÇÂ¼Ãæ°åÉÏÄ³Ò»ÀàĞÍµÄ¿Ø¼ş
+    // è®°å½•é¢æ¿ä¸ŠæŸä¸€ç±»å‹çš„æ§ä»¶
     private void AddElements(Type type)
     {
-        foreach (UIBehaviour element in GetComponentsInChildren(type, true))
+        foreach (Component component in GetComponentsInChildren(type, true))
         {
-            if (!m_Elements.ContainsKey(type))
+	        if (component is not UIBehaviour element)
+		        continue;
+	        if (!m_Elements.ContainsKey(type))
                 m_Elements.Add(type, new Dictionary<string, UIBehaviour>());
             if (m_Elements[type].ContainsKey(element.name))
             {
 #if DEBUG_MULTI && UNITY_EDITOR
-            Debug.LogError($"Ãæ°å{name}ÉÏ´æÔÚ¶à¸öÃûÎª{element.name}µÄ{type.Name}¿Ø¼ş");
+            Debug.LogError($"é¢æ¿{name}ä¸Šå­˜åœ¨å¤šä¸ªåä¸º{element.name}çš„{type.Name}æ§ä»¶");
 #endif
             }
             else

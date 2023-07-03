@@ -4,34 +4,27 @@ using UnityEngine;
 using UnityEngine.Events;
 
 /// <summary>
-/// ×ÊÔ´¼ÓÔØÆ÷
-/// ¼ÓÔØ³öµÄGameObject»áÖ±½ÓÊµÀı»¯
+/// èµ„æºåŠ è½½å™¨
+/// åŠ è½½å‡ºçš„GameObjectä¼šç›´æ¥å®ä¾‹åŒ–
 /// </summary>
 public class ResMgr : SingletonBase<ResMgr>
 {
-    // Í¬²½¼ÓÔØ
+    // åŒæ­¥åŠ è½½
     public T Load<T>(string resPath) where T : Object
     {
         T res = Resources.Load<T>(resPath);
-        if (res is GameObject)
-            return GameObject.Instantiate(res) as T;
-        else
-            return res;
+        return res is GameObject ? Object.Instantiate(res) : res;
     }
 
-    // Òì²½¼ÓÔØ
+    // å¼‚æ­¥åŠ è½½
     public void LoadAsync<T>(string resPath, UnityAction<T> callback) where T: Object
     {
-        MonoMgr.Instance.StartCoroutine(LoadCoroutine<T>(resPath, callback));
+        MonoMgr.Instance.StartCoroutine(LoadCoroutine(resPath, callback));
     }
     private IEnumerator LoadCoroutine<T>(string resPath, UnityAction<T> callback) where T: Object
     {
         ResourceRequest rr = Resources.LoadAsync<T>(resPath);
         yield return rr;
-
-        if (rr.asset is GameObject)
-            callback(GameObject.Instantiate(rr.asset) as T);
-        else
-            callback(rr.asset as T);
+        callback((rr.asset is GameObject ? Object.Instantiate(rr.asset) : rr.asset) as T);
     }
 }
