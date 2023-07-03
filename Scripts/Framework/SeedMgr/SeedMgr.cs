@@ -2,25 +2,23 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using System.Reflection;
+using LitJson;
 
 public class SeedMgr : RuntimeData<SeedMgr>
 {
-    [NonSerializedField]
-    public override string FilePath => $"{Application.persistentDataPath}/Seed.json";
-
-    // 用于生成其它种子的全局种子
+	// 用于生成其它种子的全局种子
     public int GlobalSeed { get; set; }
     // 记录所有游戏中所使用的种子
-    [SerializeField]
-    protected Dictionary<string, SeedData> m_Seeds = new Dictionary<string, SeedData>();
+    [SerializeJson]
+    private Dictionary<string, SeedData> m_Seeds = new();
 
     // 当前使用的种子数值
-    [NonSerializedField]
+    [NonSerializeJson]
     public int CurrentSeed => m_Seeds[CurrentSeedName].Seed;
     // 当前使用的种子名
-    public string CurrentSeedName { get; protected set; }
+    public string CurrentSeedName { get; private set; }
     // 当前使用的种子数据
-    protected SeedData m_CurrentSeed => m_Seeds[CurrentSeedName];
+    private SeedData CurrentSeedData => m_Seeds[CurrentSeedName];
 
     public override void InitData()
     {
@@ -87,18 +85,18 @@ public class SeedMgr : RuntimeData<SeedMgr>
     {
         get
         {
-            Instance.m_CurrentSeed.Use();
+            Instance.CurrentSeedData.Use();
             return Random.value;
         }
     }
     public static int Range(int minInclusive, int maxExclusive)
     {
-        Instance.m_CurrentSeed.Use();
+        Instance.CurrentSeedData.Use();
         return Random.Range(minInclusive, maxExclusive);
     }
     public static float Range(float minInclusive, float maxInclusive)
     {
-        Instance.m_CurrentSeed.Use();
+        Instance.CurrentSeedData.Use();
         return Random.Range(minInclusive, maxInclusive);
     }
 

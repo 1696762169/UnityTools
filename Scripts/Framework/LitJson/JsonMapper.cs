@@ -15,6 +15,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Reflection;
+using Object = System.Object;
 
 
 namespace LitJson
@@ -104,8 +105,20 @@ namespace LitJson
 
     public delegate IJsonWrapper WrapperFactory();
 
+    // 此处进行过更改
+    [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property)]
+    public sealed class SerializeJsonAttribute : Attribute
+    {
 
-    public class JsonMapper
+    }
+	[AttributeUsage(AttributeTargets.Field | AttributeTargets.Property)]
+    public sealed class NonSerializeJsonAttribute : Attribute
+    {
+
+    }
+
+
+	public class JsonMapper
     {
         #region Fields
         private static readonly int max_nesting_depth;
@@ -174,16 +187,16 @@ namespace LitJson
         private static bool Serializable(Type type, PropertyInfo p_info)
         {
             if ((type.GetProperty(p_info.Name) != null ||
-                p_info.GetCustomAttribute<UnityEngine.SerializeField>() != null) &&
-                p_info.GetCustomAttribute<UnityEngine.NonSerializedFieldAttribute>() == null)
+                p_info.GetCustomAttribute<SerializeJsonAttribute>() != null) &&
+                p_info.GetCustomAttribute<NonSerializeJsonAttribute>() == null)
                 return true;
             return false;
         }
         private static bool Serializable(Type type, FieldInfo p_info)
         {
             if ((type.GetField(p_info.Name) != null ||
-                p_info.GetCustomAttribute<UnityEngine.SerializeField>() != null) &&
-                p_info.GetCustomAttribute<UnityEngine.NonSerializedFieldAttribute>() == null)
+                p_info.GetCustomAttribute<SerializeJsonAttribute>() != null) &&
+                p_info.GetCustomAttribute<NonSerializeJsonAttribute>() == null)
                 return true;
             return false;
         }

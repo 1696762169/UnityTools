@@ -2,13 +2,14 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using System.Reflection;
+using LitJson;
 using Newtonsoft.Json.Linq;
 
 public abstract class ListTransformer<T>
 {
-    [NonSerializedField]
+    [NonSerializeJson]
     public abstract T this[int index] { get; set; }
-    [SerializeField]
+    [SerializeJson]
 
     protected List<int> m_Ref = new List<int>();
 

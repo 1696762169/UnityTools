@@ -8,9 +8,9 @@ using System;
 
 public abstract class GlobalConfigXlsx<T, TRaw> where T : GlobalConfigXlsx<T, TRaw>, new() where TRaw : class, new()
 {
-    [NonSerializedField]
+    [NonSerializeJson]
     public static T Instance { get; protected set; } = new T();
-    [NonSerializedField]
+    [NonSerializeJson]
     public abstract string FilePath { get; }
 
     private bool inited = false;
@@ -33,12 +33,12 @@ public abstract class GlobalConfigXlsx<T, TRaw> where T : GlobalConfigXlsx<T, TR
             }
             else
             {
-                throw new System.ArgumentException($"全局配置文件【{FilePath}】不是xlsx文件");
+                throw new System.ArgumentException($"鍏ㄥ眬閰嶇疆鏂囦欢銆恵FilePath}銆戜笉鏄痻lsx鏂囦欢");
             }
         }
         catch
         {
-            throw new FileNotFoundException($"无法读取全局配置文件：{FilePath}");
+            throw new FileNotFoundException($"鏃犳硶璇诲彇鍏ㄥ眬閰嶇疆鏂囦欢锛歿FilePath}");
         }
     }
 }

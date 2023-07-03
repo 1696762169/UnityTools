@@ -13,8 +13,8 @@ public abstract class RuntimeData<T> where T : RuntimeData<T>, new()
     /// <summary>
     /// 文件路径
     /// </summary>
-    [NonSerializedField]
-    public abstract string FilePath { get; }
+    [NonSerializeJson]
+    public virtual string FilePath { get; } = $"{Application.persistentDataPath}/{typeof(T).Name}.json";
     /// <summary>
     /// 初始化数据
     /// </summary>

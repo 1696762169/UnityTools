@@ -1,3 +1,4 @@
+using System;
 using LitJson;
 using System.Collections;
 using System.Collections.Generic;
@@ -7,9 +8,9 @@ using MiniExcelLibs;
 
 public abstract class GlobalConfigJson<T> where T : GlobalConfigJson<T>, new()
 {
-    [NonSerializedField]
+    [NonSerializeJson]
     public static T Instance { get; protected set; } = new T();
-    [NonSerializedField]
+    [NonSerializeJson]
     public abstract string FilePath { get; }
 
     private bool inited = false;

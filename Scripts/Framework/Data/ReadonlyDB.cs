@@ -5,7 +5,9 @@ using MiniExcelLibs;
 using Unity.VisualScripting;
 using Newtonsoft.Json.Linq;
 using System;
+using System.Linq;
 using System.Reflection;
+using LitJson;
 
 // 保证只读数据有一个ID字段
 public interface IUnique
@@ -13,13 +15,13 @@ public interface IUnique
     public int ID { get; }
 }
 // 保证只读数据可复制出副本给外部使用
-public interface ICopy<T>
+public interface ICopy<out T>
 {
     public T Copy();
 }
 
 // 读取原数据接口
-public interface IGetOriginValue<T>
+public interface IGetOriginValue<out T>
 {
     /// <summary>
     /// 根据ID获取原始数据对象
@@ -31,7 +33,7 @@ public interface IGetOriginValue<T>
     public IEnumerable<T> GetAllOriginValue();
 }
 // 获取副本数据接口
-public interface IGetCopyValue<T>
+public interface IGetCopyValue<out T>
 {
     /// <summary>
     /// 根据ID获取数据的副本
@@ -44,7 +46,7 @@ public interface IGetCopyValue<T>
 }
 
 // 完整的只读数据管理类访问接口
-public interface IReadonlyDB<T> : IGetOriginValue<T>
+public interface IReadonlyDB<out T> : IGetOriginValue<T>
 {
     /// <summary>
     /// 判断是否包含特定ID的数据
@@ -53,80 +55,78 @@ public interface IReadonlyDB<T> : IGetOriginValue<T>
 }
 
 /// <summary>
-/// 需要从Excel表格中读取数据的的只读数据管理类
+/// 需要从Excel表格中读取数据的只读数据管理类
 /// </summary>
-/// <typeparam name="TDB">本类型</typeparam>
 /// <typeparam name="TValue">数据类型</typeparam>
 /// <typeparam name="TRaw">从Excel中读取到的原始数据类型</typeparam>
-public abstract class ReadonlyDB<TDB, TValue, TRaw> : IReadonlyDB<TValue>
-    where TDB : ReadonlyDB<TDB, TValue, TRaw>, new()
+public abstract class ReadonlyDB<TValue, TRaw> : ControlledSingleton ,IReadonlyDB<TValue>
     where TValue : class, IUnique
     where TRaw : class, IUnique, new()
 {
-    private static TDB instance = new TDB();
-    public static TDB Instance => instance;
-    private bool inited = false;
-
-    /// <summary>
-    /// 文件路径
-    /// </summary>
-    [NonSerializedField]
-    public abstract string FilePath { get; }
-    /// <summary>
-    /// 表格名
-    /// </summary>
-    [NonSerializedField]
+	/// <summary>
+	/// 文件路径
+	/// </summary>
+	[NonSerializeJson]
+	public virtual string FileName => typeof(TValue).Name + "s";
+	public virtual string FilePath => $"{Application.streamingAssetsPath}/{FileName}.xlsx";
+	/// <summary>
+	/// 表格名
+	/// </summary>
+	[NonSerializeJson]
     public virtual string SheetName { get; } = null;
 
     // 存储数据的字典
-    protected Dictionary<int, TValue> m_Data = new Dictionary<int, TValue>();
-    public TValue this[int id] => m_Data[id];
+    protected Dictionary<int, TValue> Data { get; } = new();
+    public TValue this[int id] => Data[id];
     /// <summary>
     /// 初始化数据
     /// </summary>
-    public virtual void InitInstance()
+    public override void InitInstance()
     {
-        if (inited)
-            return;
-        inited = true;
+        base.InitInstance();
+
         foreach (TRaw line in MiniExcel.Query<TRaw>(FilePath, SheetName, ExcelType.XLSX, "A3"))
         {
             if (line.ID == 0)
                 continue;
-            m_Data.Add(line.ID, ProcessRaw(line));
+            Data.Add(line.ID, ProcessRaw(line));
         }
         InitExtend();
     }
 
     public virtual void InitExtend() { }
-
-    //public TValue GetCopyValue(int id)
-    //{
-    //    if (!m_Data.ContainsKey(id))
-    //        return null;
-    //    return m_Data[id].Copy();
-    //}
-    //public IEnumerable<TValue> GetAllCopyValue()
-    //{
-    //    foreach (TValue value in m_Data.Values)
-    //        yield return value.Copy();
-    //}
-
+    
     public TValue GetOriginValue(int id)
     {
-        if (!m_Data.ContainsKey(id))
-            return null;
-        return m_Data[id];
-    }
+		return Data.TryGetValue(id, out var value) ? value : null;
+	}
 
     public IEnumerable<TValue> GetAllOriginValue()
     {
-        foreach (TValue value in m_Data.Values)
-            yield return value;
+	    return Data.Values;
     }
 
-    public bool Contains(int id) => m_Data.ContainsKey(id);
+    public bool Contains(int id) => Data.ContainsKey(id);
 
     // 将从Excel表格中读取到的原始数据转换为实际使用的数据
     protected virtual TValue ProcessRaw(TRaw raw) => Activator.CreateInstance(typeof(TValue), raw) as TValue;
+}
+
+/// <summary>
+/// 可复制项目的只读数据管理类
+/// </summary>
+/// <typeparam name="TValue">数据类型</typeparam>
+/// <typeparam name="TRaw">从Excel中读取到的原始数据类型</typeparam>
+public abstract class CopyableDB<TValue, TRaw> : ReadonlyDB<TValue, TRaw>, IGetCopyValue<TValue>
+	where TValue : class, IUnique, ICopy<TValue>
+	where TRaw : class, IUnique, new()
+{
+    public TValue GetCopyValue(int id)
+    {
+	    return Data.TryGetValue(id, out var value) ? value.Copy() : null;
+    }
+    public IEnumerable<TValue> GetAllCopyValue()
+    {
+	    return Data.Values.Select(value => value.Copy());
+    }
 }
