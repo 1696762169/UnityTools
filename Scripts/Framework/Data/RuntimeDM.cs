@@ -37,7 +37,7 @@ public abstract class RuntimeDM<TDM> : ControlledSingleton<RuntimeDM<TDM>>, IRun
 	// 文件路径
 	protected virtual string FileName => typeof(TDM).Name;
 	protected virtual string FileDir => $"{Application.persistentDataPath}/{FileName}";
-	protected string FilePath => $"{FileDir}/{FileName}_{CurFileIndex}.json";
+	protected virtual string FilePath => $"{FileDir}/{FileName}_{CurFileIndex}.json";
 
 	// 是否已经初始化过
 	public static bool Inited { get; protected set; }
