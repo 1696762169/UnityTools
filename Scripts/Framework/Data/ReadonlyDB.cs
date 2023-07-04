@@ -59,21 +59,19 @@ public interface IReadonlyDB<out T> : IGetOriginValue<T>
 /// </summary>
 /// <typeparam name="TValue">数据类型</typeparam>
 /// <typeparam name="TRaw">从Excel中读取到的原始数据类型</typeparam>
-public abstract class ReadonlyDB<TValue, TRaw> : ControlledSingleton ,IReadonlyDB<TValue>
+public abstract class ReadonlyDB<TValue, TRaw> : ControlledSingleton<ReadonlyDB<TValue, TRaw>> ,IReadonlyDB<TValue>
     where TValue : class, IUnique
     where TRaw : class, IUnique, new()
 {
 	/// <summary>
 	/// 文件路径
 	/// </summary>
-	[NonSerializeJson]
 	public virtual string FileName => typeof(TValue).Name + "s";
 	public virtual string FilePath => $"{Application.streamingAssetsPath}/{FileName}.xlsx";
 	/// <summary>
 	/// 表格名
 	/// </summary>
-	[NonSerializeJson]
-    public virtual string SheetName { get; } = null;
+	public virtual string SheetName => null;
 
     // 存储数据的字典
     protected Dictionary<int, TValue> Data { get; } = new();
@@ -81,9 +79,9 @@ public abstract class ReadonlyDB<TValue, TRaw> : ControlledSingleton ,IReadonlyD
     /// <summary>
     /// 初始化数据
     /// </summary>
-    public override void InitInstance()
+    public override ReadonlyDB<TValue, TRaw> InitInstance()
     {
-        base.InitInstance();
+	    base.InitInstance();
 
         foreach (TRaw line in MiniExcel.Query<TRaw>(FilePath, SheetName, ExcelType.XLSX, "A3"))
         {
@@ -92,6 +90,7 @@ public abstract class ReadonlyDB<TValue, TRaw> : ControlledSingleton ,IReadonlyD
             Data.Add(line.ID, ProcessRaw(line));
         }
         InitExtend();
+        return this;
     }
 
     public virtual void InitExtend() { }

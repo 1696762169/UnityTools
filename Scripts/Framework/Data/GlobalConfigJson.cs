@@ -6,37 +6,45 @@ using System.IO;
 using UnityEngine;
 using MiniExcelLibs;
 
-public abstract class GlobalConfigJson<T> where T : GlobalConfigJson<T>, new()
+/// <summary>
+/// Json格式的全局配置类
+/// </summary>
+public abstract class GlobalConfigJson<T> : ControlledSingleton<GlobalConfigJson<T>>
+	where T : GlobalConfigJson<T>, new()
 {
     [NonSerializeJson]
-    public static T Instance { get; protected set; } = new T();
+    public virtual string FileName => typeof(T).Name;
     [NonSerializeJson]
-    public abstract string FilePath { get; }
+    public virtual string FilePath => $"{Application.streamingAssetsPath}/{FileName}.json";
 
-    private bool inited = false;
-
-    public void InitInstance()
+    public new virtual T InitInstance()
     {
-        if (inited)
-            return;
-        inited = true;
+        base.InitInstance();
 
         try
-        {
-            if (FilePath.EndsWith("json"))
-            {
-                Instance = JsonMapper.ToObject<T>(File.ReadAllText(FilePath));
-            }
-            else
-            {
-                throw new System.ArgumentException($"全局配置文件【{FilePath}】不是json文件");
-            }
-        }
+	    {
+		    if (!FilePath.EndsWith("json"))
+			    throw new ArgumentException($"全局配置文件【{FilePath}】不是json文件");
+		    T instance;
+		    if (!File.Exists(FilePath))
+		    {
+                instance = new T();
+				File.WriteAllText(FilePath, JsonMapper.ToJson(instance));
+				Debug.LogWarning($"全局配置文件【{FilePath}】不存在，已新建文件");
+		    }
+		    else
+		    {
+				instance = JsonMapper.ToObject<T>(File.ReadAllText(FilePath));
+				instance.InitExtend();
+			}
+		    return instance;
+	    }
         catch
         {
+            HasInstance = false;
             throw new FileNotFoundException($"无法读取全局配置文件：{FilePath}");
         }
-        Instance.InitExtend();
     }
+
     protected virtual void InitExtend() { }
 }

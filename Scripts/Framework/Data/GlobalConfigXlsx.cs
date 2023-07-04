@@ -1,40 +1,38 @@
 using LitJson;
-using System.Collections;
-using System.Collections.Generic;
 using System.IO;
-using UnityEngine;
 using MiniExcelLibs;
 using System;
+using System.Linq;
+using UnityEngine;
 
-public abstract class GlobalConfigXlsx<T, TRaw> where T : GlobalConfigXlsx<T, TRaw>, new() where TRaw : class, new()
+/// <summary>
+/// Xlsx格式的全局配置类
+/// </summary>
+/// <typeparam name="T"></typeparam>
+/// <typeparam name="TRaw"></typeparam>
+public abstract class GlobalConfigXlsx<T, TRaw> : ControlledSingleton<GlobalConfigXlsx<T, TRaw>>
+	where T : GlobalConfigXlsx<T, TRaw>, new()
+	where TRaw : class, new()
 {
-    [NonSerializeJson]
-    public static T Instance { get; protected set; } = new T();
-    [NonSerializeJson]
-    public abstract string FilePath { get; }
+	public virtual string FileName => typeof(T).Name;
+	public virtual string FilePath => $"{Application.streamingAssetsPath}/{FileName}.xlsx";
+	public virtual string SheetName => null;
 
-    private bool inited = false;
-
-    public void InitInstance()
-    {
-        if (inited)
-            return;
-        inited = true;
+	public new virtual T InitInstance()
+	{
+		base.InitInstance();
 
         try
         {
-            if (FilePath.EndsWith("xlsx"))
-            {
-                foreach (TRaw raw in MiniExcel.Query<TRaw>(FilePath, startCell: "A3"))
-                {
-                    Instance = Activator.CreateInstance(typeof(T), raw) as T;
-                    break;
-                }
-            }
-            else
-            {
-                throw new System.ArgumentException($"全局配置文件【{FilePath}】不是xlsx文件");
-            }
+            if (!FilePath.EndsWith("xlsx"))
+	            throw new ArgumentException($"全局配置文件【{FilePath}】不是xlsx文件");
+            if (!File.Exists(FilePath))
+				throw new FileNotFoundException($"全局配置文件【{FilePath}】不存在");
+			
+            // 只读取第一行有效数据
+            return MiniExcel.Query<TRaw>(FilePath, SheetName, ExcelType.XLSX, "A3")
+	            .Select(raw => Activator.CreateInstance(typeof(T), raw) as T)
+	            .FirstOrDefault();
         }
         catch
         {
