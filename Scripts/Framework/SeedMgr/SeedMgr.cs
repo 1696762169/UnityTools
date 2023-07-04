@@ -1,15 +1,17 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using System.Reflection;
 using LitJson;
 
-public class SeedMgr : RuntimeData<SeedMgr>
+public class SeedMgr : RuntimeDM<SeedMgr>
 {
 	// 用于生成其它种子的全局种子
     public int GlobalSeed { get; set; }
-    // 记录所有游戏中所使用的种子
-    [SerializeJson]
+    private const string GLOBAL_SEED_NAME = "GlobalSeed";
+    private const string RANDOM_SEED_NAME = "随机种子";
+
+	// 记录所有游戏中所使用的种子
+	[SerializeJson]
     private Dictionary<string, SeedData> m_Seeds = new();
 
     // 当前使用的种子数值
@@ -20,13 +22,14 @@ public class SeedMgr : RuntimeData<SeedMgr>
     // 当前使用的种子数据
     private SeedData CurrentSeedData => m_Seeds[CurrentSeedName];
 
-    public override void InitData()
+    protected int TimeSeed => (int)(System.DateTime.Now.Ticks >> 20);
+
+	protected override void InitData()
     {
         m_Seeds = new Dictionary<string, SeedData>();
-#if UNITY_EDITOR
-        if (GameManager.Instance.useRandomSeed)
-            GlobalSeed = Random.Range(0, int.MaxValue / 2);
-#endif
+
+        // 设定全局种子
+        GlobalSeed = GameManager.Instance.useRandomSeed ? Random.Range(0, int.MaxValue / 2) : GameManager.Instance.seed;
         Random.InitState(GlobalSeed);
 
         foreach (FieldInfo key in typeof(SeedName).GetFields(BindingFlags.Static | BindingFlags.Public))
@@ -34,16 +37,21 @@ public class SeedMgr : RuntimeData<SeedMgr>
             m_Seeds.Add(key.GetValue(null).ToString(), new SeedData(Random.Range(0, int.MaxValue / 2)));
         }
     }
-#if UNITY_EDITOR
-    protected override void LoadData()
+
+    protected override SeedMgr LoadData()
     {
         if (!GameManager.Instance.useRandomSeed)
-            base.LoadData();
-    }
-#endif
+            return base.LoadData();
+
+        SeedMgr instance = new();
+        instance.PreProcess();
+        instance.InitData();
+        return instance;
+	}
+
 
     // 检测SeedName类是否发生了改变 并保存改变后的数据
-    protected override void InitExtend()
+    protected override void PostProcess()
     {
         bool changed = false;
         foreach (FieldInfo key in typeof(SeedName).GetFields(BindingFlags.Static | BindingFlags.Public))
@@ -55,7 +63,18 @@ public class SeedMgr : RuntimeData<SeedMgr>
                 changed = true;
             }
         }
-        if (changed)
+
+        if (!m_Seeds.ContainsKey(GLOBAL_SEED_NAME))
+        {
+	        m_Seeds[GLOBAL_SEED_NAME] = new SeedData(GlobalSeed);
+	        changed = true;
+        }
+        if (!m_Seeds.ContainsKey(RANDOM_SEED_NAME))
+        {
+	        m_Seeds[RANDOM_SEED_NAME] = new SeedData(TimeSeed);
+	        changed = true;
+        }
+		if (changed)
             SaveData();
     }
 
@@ -76,48 +95,53 @@ public class SeedMgr : RuntimeData<SeedMgr>
     /// </summary>
     public void UseRandomSeed()
     {
-        CurrentSeedName = "随机种子";
-        Random.InitState((int)(System.DateTime.Now.Ticks >> 20));
+        CurrentSeedName = RANDOM_SEED_NAME;
+        Random.InitState(TimeSeed);
     }
 
     /* 仿照Random类提供接口 */
-    public static float value
+    public float Value
     {
         get
         {
-            Instance.CurrentSeedData.Use();
+            CurrentSeedData.Use();
             return Random.value;
         }
     }
-    public static int Range(int minInclusive, int maxExclusive)
+    public int Range(int minInclusive, int maxExclusive)
     {
-        Instance.CurrentSeedData.Use();
+        CurrentSeedData.Use();
         return Random.Range(minInclusive, maxExclusive);
     }
-    public static float Range(float minInclusive, float maxInclusive)
+    public float Range(float minInclusive, float maxInclusive)
     {
-        Instance.CurrentSeedData.Use();
+        CurrentSeedData.Use();
         return Random.Range(minInclusive, maxInclusive);
     }
 
 
-    // 用于记录的种子数据类
-    protected class SeedData
-    {
-        public int Seed => m_Seed + m_Offset;   // 当前所使用的实际种子
-        protected int m_Seed;       // 原始的种子值
-        protected int m_Offset;     // 种子偏移量
-        public SeedData(int seed)
-        {
-            m_Seed = seed;
-            m_Offset = 0;
-        }
+	// 用于记录的种子数据类
+	public class SeedData : IUnique
+	{
+		public int ID => 1;
+		public int Seed { get; protected set; } // 当前所使用的实际种子
+		public SeedData() { }
+		public SeedData(int seed)
+		{
+			Seed = seed;
+		}
 
-        // 每次使用该种子后都应该进行记录
-        public void Use()
-        {
-            ++m_Offset;
-            Random.InitState(Seed);
-        }
-    }
+		// 每次使用该种子后都应该进行记录
+		public void Use()
+		{
+			if (Seed < int.MaxValue / 3)
+				Seed = Seed * 3 + 11;
+			else
+				Seed /= 17;
+			//if (Seed < int.MaxValue / 3)
+			//    Seed = Seed * 3 + 1;
+			//else
+			//    Seed %= 7;
+		}
+	}
 }

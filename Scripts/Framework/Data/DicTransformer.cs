@@ -15,7 +15,7 @@ public class DicTransformer<TKey, TValue>
         set => m_Ref[key.ToString()] = value;
     }
 
-    protected Dictionary<string, TValue> m_Ref;
+    private readonly Dictionary<string, TValue> m_Ref;
     public DicTransformer(Dictionary<string, TValue> @ref)
     {
         m_Ref = @ref;
@@ -25,5 +25,6 @@ public class DicTransformer<TKey, TValue>
     public void Remove(TKey key) => m_Ref.Remove(key.ToString());
     public int Count => m_Ref.Count;
     public bool ContainsKey(TKey key) => m_Ref.ContainsKey(key.ToString());
+    public void Clear() => m_Ref.Clear();
     public IEnumerator<KeyValuePair<string, TValue>> GetEnumerator() => m_Ref.GetEnumerator();
 }

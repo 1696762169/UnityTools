@@ -6,48 +6,50 @@ using UnityEngine;
 
 public class GameManager : SingletonMono<GameManager>
 {
-    [Header("Ê¹ÓÃËæ»úÖÖ×Ó")]
+    [Header("è®¾å®šçš„ç§å­æ•°")]
+    public int seed;
+    [Header("ä½¿ç”¨éšæœºç§å­")]
     public bool useRandomSeed;
 
-    [Header("ÒÔÏÂÑ¡ÏîÓÃÓÚ¿ªÆô²âÊÔÊı¾İ")]
-    [Tooltip("¿ªÆô²âÊÔÄ£Ê½")]
+    [Header("ä»¥ä¸‹é€‰é¡¹ç”¨äºå¼€å¯æµ‹è¯•æ•°æ®")]
+    [Tooltip("å¼€å¯æµ‹è¯•æ¨¡å¼")]
     public bool test;
-    [Tooltip("ÔÚ²âÊÔÄ£Ê½ÏÂ±£´æÊı¾İµ½ÎÄ¼ş")]
+    [Tooltip("åœ¨æµ‹è¯•æ¨¡å¼ä¸‹ä¿å­˜æ•°æ®åˆ°æ–‡ä»¶")]
     public bool saveTestData;
     //[Space(10)]
-    // ±íÊ¾ÊÇ·ñÕıÔÚ½øĞĞ³õÊ¼»¯
+    // è¡¨ç¤ºæ˜¯å¦æ­£åœ¨è¿›è¡Œåˆå§‹åŒ–
     public  bool Initializing { get; private set; }
 
     protected override void Awake()
     {
         base.Awake();
 
-        /* ³õÊ¼»¯Ö»¶ÁÊı¾İ */
+        /* åˆå§‹åŒ–åªè¯»æ•°æ® */
 
-        /* ³õÊ¼»¯ÓÎÏ·ÖÖ×Ó */
-        SeedMgr.Instance.GlobalSeed = 0;
-        SeedMgr.Instance.InitInstance();
+        /* åˆå§‹åŒ–æ¸¸æˆç§å­ */
+        //SeedMgr.Instance.GlobalSeed = 0;
+        //SeedMgr.Instance.InitInstance();
 
-        /* ³õÊ¼»¯ÔËĞĞÊ±Êı¾İ */
+        /* åˆå§‹åŒ–è¿è¡Œæ—¶æ•°æ® */
 
-        /* ³õÊ¼»¯¸÷ÀàÏÔÊ¾½çÃæ */
+        /* åˆå§‹åŒ–å„ç±»æ˜¾ç¤ºç•Œé¢ */
 
-        /* Ìí¼ÓÈ«¾ÖÊÂ¼ş */
+        /* æ·»åŠ å…¨å±€äº‹ä»¶ */
     }
 
     /// <summary>
-    /// ³õÊ¼»¯´æµµ²¢¸²¸ÇÔ­´æµµÊı¾İ
+    /// åˆå§‹åŒ–å­˜æ¡£å¹¶è¦†ç›–åŸå­˜æ¡£æ•°æ®
     /// </summary>
     public void InitDataAndSave()
     {
         Initializing = true;
 
-        /* ÔÚ´Ë´¦½øĞĞ³õÊ¼»¯Óë´æµµ¸²¸Ç */
+        /* åœ¨æ­¤å¤„è¿›è¡Œåˆå§‹åŒ–ä¸å­˜æ¡£è¦†ç›– */
 
         Initializing = false;
     }
 
-    // ³õÊ¼»¯ÆäËü¸÷ÖÖµ¥Àı×é¼ş
+    // åˆå§‹åŒ–å…¶å®ƒå„ç§å•ä¾‹ç»„ä»¶
     protected void InitView<T>() where T : Component
     {
         if (GetComponent<T>() == null)

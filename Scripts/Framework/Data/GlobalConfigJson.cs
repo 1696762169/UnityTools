@@ -13,9 +13,9 @@ public abstract class GlobalConfigJson<T> : ControlledSingleton<GlobalConfigJson
 	where T : GlobalConfigJson<T>, new()
 {
     [NonSerializeJson]
-    public virtual string FileName => typeof(T).Name;
+    protected virtual string FileName => typeof(T).Name;
     [NonSerializeJson]
-    public virtual string FilePath => $"{Application.streamingAssetsPath}/{FileName}.json";
+    protected virtual string FilePath => $"{Application.streamingAssetsPath}/{FileName}.json";
 
     public new virtual T InitInstance()
     {

@@ -14,9 +14,9 @@ public abstract class GlobalConfigXlsx<T, TRaw> : ControlledSingleton<GlobalConf
 	where T : GlobalConfigXlsx<T, TRaw>, new()
 	where TRaw : class, new()
 {
-	public virtual string FileName => typeof(T).Name;
-	public virtual string FilePath => $"{Application.streamingAssetsPath}/{FileName}.xlsx";
-	public virtual string SheetName => null;
+	protected virtual string FileName => typeof(T).Name;
+	protected virtual string FilePath => $"{Application.streamingAssetsPath}/{FileName}.xlsx";
+	protected virtual string SheetName => null;
 
 	public new virtual T InitInstance()
 	{

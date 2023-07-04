@@ -66,12 +66,12 @@ public abstract class ReadonlyDB<TValue, TRaw> : ControlledSingleton<ReadonlyDB<
 	/// <summary>
 	/// 文件路径
 	/// </summary>
-	public virtual string FileName => typeof(TValue).Name + "s";
-	public virtual string FilePath => $"{Application.streamingAssetsPath}/{FileName}.xlsx";
+	protected virtual string FileName => typeof(TValue).Name + "s";
+	protected virtual string FilePath => $"{Application.streamingAssetsPath}/{FileName}.xlsx";
 	/// <summary>
 	/// 表格名
 	/// </summary>
-	public virtual string SheetName => null;
+	protected virtual string SheetName => null;
 
     // 存储数据的字典
     protected Dictionary<int, TValue> Data { get; } = new();
