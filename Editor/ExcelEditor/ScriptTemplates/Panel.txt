@@ -1,0 +1,15 @@
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.UI;
+
+/// <summary>
+/// $ClassComment$
+/// </summary>
+public class $ShortClassName$Panel : PanelBase
+{
+    public override void Show()
+    {
+        
+    }
+    public override void Hide() { }
+}

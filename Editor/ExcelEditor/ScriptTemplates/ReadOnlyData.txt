@@ -1,0 +1,21 @@
+using System.Collections.Generic;
+using UnityEngine;
+
+/// <summary>
+/// $ClassComment$
+/// </summary>
+public class $ShortClassName$Data : IUnique
+{
+    public int ID { get; protected set; }
+
+    public $ShortClassName$Data() { }
+    public $ShortClassName$Data($ShortClassName$DataRaw raw)
+    {
+        ExcelTools.BasicCopy(raw, this);
+    }
+
+    public class $ShortClassName$DataRaw : IUnique
+    {
+        public int ID { get; set; }
+    }
+}

@@ -1,0 +1,17 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEditor;
+
+/// <summary>
+/// $ClassComment$
+/// </summary>
+[CustomEditor(typeof($ShortClassName$))]
+public class $ShortClassName$Editor : Editor
+{
+    public override void OnInspectorGUI()
+    {
+        base.OnInspectorGUI();
+        $ShortClassName$ target = this.target as $ShortClassName$;
+    }
+}

@@ -1,0 +1,22 @@
+using System.Collections.Generic;
+using UnityEngine;
+
+/// <summary>
+/// $ClassComment$
+/// </summary>
+public class $ShortClassName$ : IUnique
+{
+    public int ID { get; protected set; }
+
+    [NonSerializedField]
+    public $ShortClassName$Data Data => $ShortClassName$DB.Instance.GetValue(m_DataID);
+    [SerializeField]
+    protected int m_DataID;
+
+    public $ShortClassName$(int id)
+    {
+        ID = IDMgr.Instance.GetNewID<$ShortClassName$>();
+        m_DataID = id;
+    }
+    public $ShortClassName$($ShortClassName$Data data) : this(data.ID) { }
+}

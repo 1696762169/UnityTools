@@ -1,0 +1,7 @@
+/// <summary>
+/// $ClassComment$
+/// </summary>
+public enum $ShortClassName$Type
+{
+    
+}

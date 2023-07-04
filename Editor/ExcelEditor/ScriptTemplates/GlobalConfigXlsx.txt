@@ -1,0 +1,19 @@
+using System.Collections.Generic;
+using UnityEngine;
+
+/// <summary>
+/// $ClassComment$
+/// </summary>
+public class $ShortClassName$Config : GlobalConfigXlsx<$ShortClassName$Config, $ShortClassName$Config.$ShortClassName$ConfigRaw>
+{
+    public $ShortClassName$Config() { }
+    public $ShortClassName$Config($ShortClassName$ConfigRaw raw)
+    {
+        ExcelTools.BasicCopy(raw, this);
+    }
+
+    public class $ShortClassName$ConfigRaw
+    {
+
+    }
+}
