@@ -2,29 +2,30 @@ using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 using System.IO;
+using System.Linq;
 
 /// <summary>
-/// ½Å±¾Éú³ÉÆ÷´°¿Ú
+/// è„šæœ¬ç”Ÿæˆå™¨çª—å£
 /// </summary>
 public class ScriptGeneratorEditorWindow : EditorWindow
 {
-    // UI ÊôĞÔ
-    private ScriptTemplateType template;
-    private string target = "Scripts/";
-    private bool overwrite;
+    // UI å±æ€§
+    private ScriptTemplateType m_Template;
+    private string m_Target = "Scripts/";
+    private bool m_Overwrite;
 
-    // °ïÖú¿òÏÔÊ¾¿ØÖÆ
-    private bool showHelpBox;
+    // å¸®åŠ©æ¡†æ˜¾ç¤ºæ§åˆ¶
+    private bool m_ShowHelpBox;
 
-    // ½Å±¾Ìæ»»²ÎÊı
-    private string shortClassName;
-    private string classComment;
+    // è„šæœ¬æ›¿æ¢å‚æ•°
+    private string m_ShortClassName;
+    private string m_ClassComment;
 
-    // È·ÈÏ±äÁ¿ºÍÄÚÈİ
+    // ç¡®è®¤å˜é‡å’Œå†…å®¹
     private bool m_Ensure = false;
 
-    // Ä£°åÂ·¾¶
-    private Dictionary<ScriptTemplateType, string> m_TemplatePath = new Dictionary<ScriptTemplateType, string>()
+    // æ¨¡æ¿è·¯å¾„
+    private readonly Dictionary<ScriptTemplateType, string> m_TemplatePath = new()
     {
         { ScriptTemplateType.ReadOnlyData, "ReadOnlyData" },
         { ScriptTemplateType.ReadOnlyDB, "ReadOnlyDB" },
@@ -37,56 +38,56 @@ public class ScriptGeneratorEditorWindow : EditorWindow
         { ScriptTemplateType.Enum, "Enum" },
     };
 
-    // Ìí¼Ó²Ëµ¥ÏîÒÔ´ò¿ª´°¿Ú
-    [MenuItem("Tools/½Å±¾Éú³ÉÆ÷")]
+    // æ·»åŠ èœå•é¡¹ä»¥æ‰“å¼€çª—å£
+    [MenuItem("Tools/è„šæœ¬ç”Ÿæˆå™¨")]
     public static void ShowWindow()
     {
-        GetWindow<ScriptGeneratorEditorWindow>("½Å±¾Éú³ÉÆ÷");
+        GetWindow<ScriptGeneratorEditorWindow>("è„šæœ¬ç”Ÿæˆå™¨");
     }
 
     private void OnGUI()
     {
         EditorGUILayout.Space();
 
-        // »æÖÆ UI
-        template = (ScriptTemplateType)EditorGUILayout.EnumPopup("Ä£°åÀàĞÍ", template);
-        GUILayout.Label("½Å±¾Éú³ÉÄ¿±êÂ·¾¶£¨Assets¿ªÊ¼µÄÏà¶ÔÂ·¾¶£©");
-        target = EditorGUILayout.TextField(target);
-        overwrite = EditorGUILayout.Toggle("ÊÇ·ñ¸²¸ÇÔ­´úÂëÎÄ¼ş", overwrite);
+        // ç»˜åˆ¶ UI
+        m_Template = (ScriptTemplateType)EditorGUILayout.EnumPopup("æ¨¡æ¿ç±»å‹", m_Template);
+        GUILayout.Label("è„šæœ¬ç”Ÿæˆç›®æ ‡è·¯å¾„ï¼ˆAssetså¼€å§‹çš„ç›¸å¯¹è·¯å¾„ï¼‰");
+        m_Target = EditorGUILayout.TextField(m_Target);
+        m_Overwrite = EditorGUILayout.Toggle("æ˜¯å¦è¦†ç›–åŸä»£ç æ–‡ä»¶", m_Overwrite);
 
         EditorGUILayout.Space();
-        EditorGUILayout.LabelField("ÒÔÏÂÎªÄ£°å²ÎÊı", EditorStyles.boldLabel);
-        shortClassName = EditorGUILayout.TextField("ÀàÃû¼òĞ´", shortClassName);
-        classComment = EditorGUILayout.TextField("Àà×¢ÊÍ", classComment);
+        EditorGUILayout.LabelField("ä»¥ä¸‹ä¸ºæ¨¡æ¿å‚æ•°", EditorStyles.boldLabel);
+        m_ShortClassName = EditorGUILayout.TextField("ç±»åç®€å†™", m_ShortClassName);
+        m_ClassComment = EditorGUILayout.TextField("ç±»æ³¨é‡Š", m_ClassComment);
 
         EditorGUILayout.Space();
         EditorGUILayout.Space();
 
-        if (GUILayout.Button("Éú³É½Å±¾") || m_Ensure)
+        if (GUILayout.Button("ç”Ÿæˆè„šæœ¬") || m_Ensure)
         {
-            // ¼ì²éÄ¿±êÎÄ¼şÊÇ·ñ´æÔÚ
-            bool execute = !File.Exists(ScriptGenerator.GetTargetPath(target));
+            // æ£€æŸ¥ç›®æ ‡æ–‡ä»¶æ˜¯å¦å­˜åœ¨
+            bool execute = !File.Exists(ScriptGenerator.GetTargetPath(m_Target));
 
-            // ÏÔÊ¾¾¯¸æ²¢ÒªÇóÈ·ÈÏ
+            // æ˜¾ç¤ºè­¦å‘Šå¹¶è¦æ±‚ç¡®è®¤
             if (!execute)
             {
-                if (!overwrite)
+                if (!m_Overwrite)
                 {
-                    Debug.LogWarning($"ÎŞ·¨Éú³É½Å±¾£º{target}£¬¸ÃÂ·¾¶ÒÑÓĞÍ¬Ãû½Å±¾");
+                    Debug.LogWarning($"æ— æ³•ç”Ÿæˆè„šæœ¬ï¼š{m_Target}ï¼Œè¯¥è·¯å¾„å·²æœ‰åŒåè„šæœ¬");
                     return;
                 }
                 else
                 {
                     m_Ensure = true;
                     EditorGUILayout.Space();
-                    EditorGUILayout.LabelField("È·ÈÏÒªÓÃÄ£°å¸²¸ÇÒÑÓĞµÄ´úÂëÂğ£¿", EditorStyles.boldLabel);
+                    EditorGUILayout.LabelField("ç¡®è®¤è¦ç”¨æ¨¡æ¿è¦†ç›–å·²æœ‰çš„ä»£ç å—ï¼Ÿ", EditorStyles.boldLabel);
                     GUILayout.BeginHorizontal();
-                    if (GUILayout.Button("È·ÈÏ"))
+                    if (GUILayout.Button("ç¡®è®¤"))
                     {
                         m_Ensure = false;
                         execute = true;
                     }
-                    if (GUILayout.Button("È¡Ïû"))
+                    if (GUILayout.Button("å–æ¶ˆ"))
                     {
                         m_Ensure = false;
                     }
@@ -94,46 +95,46 @@ public class ScriptGeneratorEditorWindow : EditorWindow
                 }
             }
 
-            // Éú³É´úÂë
+            // ç”Ÿæˆä»£ç 
             if (execute)
             {
-                // ´´½¨Ä£°å²ÎÊıÌæ»»×Öµä
-                Dictionary<string, string> dict = new Dictionary<string, string>
+                // åˆ›å»ºæ¨¡æ¿å‚æ•°æ›¿æ¢å­—å…¸
+                Dictionary<string, string> dict = new()
                 {
-                    { "ShortClassName", shortClassName },
-                    { "ClassComment", classComment },
+                    { "ShortClassName", m_ShortClassName },
+                    { "ClassComment", m_ClassComment },
                 };
-                Generate(m_TemplatePath[template], target, dict, overwrite);
+                Generate(m_TemplatePath[m_Template], m_Target, dict, m_Overwrite);
             }
         }
 
-        // °ïÖú¿òÏÔÊ¾¿ØÖÆ¿ª¹Ø
-        showHelpBox = EditorGUILayout.Toggle("ÏÔÊ¾Ä£°åÀàĞÍËµÃ÷", showHelpBox);
-        // °ïÖú¿òÄÚÈİ
-        if (showHelpBox)
+        // å¸®åŠ©æ¡†æ˜¾ç¤ºæ§åˆ¶å¼€å…³
+        m_ShowHelpBox = EditorGUILayout.Toggle("æ˜¾ç¤ºæ¨¡æ¿ç±»å‹è¯´æ˜", m_ShowHelpBox);
+        // å¸®åŠ©æ¡†å†…å®¹
+        if (m_ShowHelpBox)
         {
-            EditorGUILayout.HelpBox("ReadOnlyData: Ö»¶ÁÊı¾İÀà\n" +
-                                    "ReadOnlyDB: Ö»¶ÁÊı¾İ¿â\n" +
-                                    "RuntimeData: ÔËĞĞÊ±Êı¾İ\n" +
-                                    "RuntimeMgr: ÔËĞĞÊ±Êı¾İ¹ÜÀíÆ÷\n" +
-                                    "Panel: UIÃæ°åÀà\n" +
-                                    "Editor: ±à¼­Æ÷½Å±¾\n" +
-                                    "GlobalConfigXlsx: ±í¸ñĞÍÈ«¾ÖÅäÖÃÀà\n" +
-                                    "GlobalConfigJson: JsonĞÍÈ«¾ÖÅäÖÃÀà\n" +
-                                    "Enum: Ã¶¾Ù", MessageType.Info);
+            EditorGUILayout.HelpBox("ReadOnlyData: åªè¯»æ•°æ®ç±»\n" +
+                                    "ReadOnlyDB: åªè¯»æ•°æ®åº“\n" +
+                                    "RuntimeData: è¿è¡Œæ—¶æ•°æ®\n" +
+                                    "RuntimeMgr: è¿è¡Œæ—¶æ•°æ®ç®¡ç†å™¨\n" +
+                                    "Panel: UIé¢æ¿ç±»\n" +
+                                    "Editor: ç¼–è¾‘å™¨è„šæœ¬\n" +
+                                    "GlobalConfigXlsx: è¡¨æ ¼å‹å…¨å±€é…ç½®ç±»\n" +
+                                    "GlobalConfigJson: Jsonå‹å…¨å±€é…ç½®ç±»\n" +
+                                    "Enum: æšä¸¾", MessageType.Info);
         }
     }
 
     /// <summary>
-    /// ¸ù¾İ½Å±¾Ä£°åÉú³É½Å±¾
+    /// æ ¹æ®è„šæœ¬æ¨¡æ¿ç”Ÿæˆè„šæœ¬
     /// </summary>
-    /// <param name="template">Ä£°åÂ·¾¶£¨´ÓÄ£°åÎÄ¼ş¼ĞScriptTemplates¿ªÊ¼µÄÏà¶ÔÂ·¾¶£©</param>
-    /// <param name="target">½Å±¾Éú³ÉÄ¿±êÂ·¾¶£¨Assets¿ªÊ¼µÄÏà¶ÔÂ·¾¶£©</param>
-    /// <param name="dict">½Å±¾ÖĞµÄ²ÎÊıÌæ»»±í</param>
-    /// <param name="overwrite">¸²¸ÇÔ­½Å±¾</param>
+    /// <param name="template">æ¨¡æ¿è·¯å¾„ï¼ˆä»æ¨¡æ¿æ–‡ä»¶å¤¹ScriptTemplateså¼€å§‹çš„ç›¸å¯¹è·¯å¾„ï¼‰</param>
+    /// <param name="target">è„šæœ¬ç”Ÿæˆç›®æ ‡è·¯å¾„ï¼ˆAssetså¼€å§‹çš„ç›¸å¯¹è·¯å¾„ï¼‰</param>
+    /// <param name="dict">è„šæœ¬ä¸­çš„å‚æ•°æ›¿æ¢è¡¨</param>
+    /// <param name="overwrite">è¦†ç›–åŸè„šæœ¬</param>
     private void Generate(string template, string target, Dictionary<string, string> dict, bool overwrite = false)
     {
-        // ¼ì²éÄ£°åÊÇ·ñ´æÔÚ
+        // æ£€æŸ¥æ¨¡æ¿æ˜¯å¦å­˜åœ¨
         if (string.IsNullOrWhiteSpace(template))
             return;
         if (!template.EndsWith(".txt"))
@@ -141,11 +142,11 @@ public class ScriptGeneratorEditorWindow : EditorWindow
         string templatePath = GetTemplatePath(template);
         if (!File.Exists(templatePath))
         {
-            Debug.LogWarning($"Î´ÕÒµ½½Å±¾Ä£°å£º{template}");
+            Debug.LogWarning($"æœªæ‰¾åˆ°è„šæœ¬æ¨¡æ¿ï¼š{template}");
             return;
         }
 
-        // ¼ì²éÊÇ·ñÄÜ¹»Éú³É
+        // æ£€æŸ¥æ˜¯å¦èƒ½å¤Ÿç”Ÿæˆ
         if (string.IsNullOrWhiteSpace(target))
             return;
         if (!target.EndsWith(".cs"))
@@ -153,32 +154,27 @@ public class ScriptGeneratorEditorWindow : EditorWindow
         string targetPath = GetTargetPath(target);
         if (!overwrite && File.Exists(targetPath))
         {
-            Debug.LogWarning($"ÎŞ·¨Éú³É½Å±¾£º{target}£¬¸ÃÂ·¾¶ÒÑÓĞÍ¬Ãû½Å±¾");
+            Debug.LogWarning($"æ— æ³•ç”Ÿæˆè„šæœ¬ï¼š{target}ï¼Œè¯¥è·¯å¾„å·²æœ‰åŒåè„šæœ¬");
             return;
         }
 
-        // Éú³É½Å±¾Â·¾¶
+        // ç”Ÿæˆè„šæœ¬è·¯å¾„
         string directory = Path.GetDirectoryName(targetPath);
         if (!Directory.Exists(directory))
             Directory.CreateDirectory(directory);
 
-        // Éú³É½Å±¾
+        // ç”Ÿæˆè„šæœ¬
         File.WriteAllText(targetPath, FillTemplate(File.ReadAllText(templatePath), dict));
-        Debug.Log($"½Å±¾{target}ÒÑ³É¹¦Éú³ÉÓÚ{targetPath}£¡");
+        Debug.Log($"è„šæœ¬{target}å·²æˆåŠŸç”Ÿæˆäº{targetPath}ï¼");
     }
 
-    // ½«Ä£°å×Ö·û´®ÖĞµÄ²ÎÊıÌæ»»ÎªÊµ¼ÊµÄÖµ²¢·µ»Ø
+    // å°†æ¨¡æ¿å­—ç¬¦ä¸²ä¸­çš„å‚æ•°æ›¿æ¢ä¸ºå®é™…çš„å€¼å¹¶è¿”å›
     private string FillTemplate(string template, Dictionary<string, string> dict)
     {
-        string ret = template;
-        foreach (string key in dict.Keys)
-        {
-            ret = ret.Replace($"${key}$", dict[key]);
-        }
-        return ret;
+	    return dict.Keys.Aggregate(template, (current, key) => current.Replace($"${key}$", dict[key]));
     }
 
-    // ½«Assets¿ªÊ¼µÄÏà¶ÔÂ·¾¶×ªÎª¾ø¶ÔÂ·¾¶
+    // å°†Assetså¼€å§‹çš„ç›¸å¯¹è·¯å¾„è½¬ä¸ºç»å¯¹è·¯å¾„
     private string GetTargetPath(string path)
     {
         string ret = $"{Application.dataPath}/{path}";
@@ -186,13 +182,13 @@ public class ScriptGeneratorEditorWindow : EditorWindow
             ret += ".cs";
         return ret;
     }
-    // ½«Ä£°åÎÄ¼ş¼ĞScriptTemplates¿ªÊ¼µÄÏà¶ÔÂ·¾¶×ªÎª¾ø¶ÔÂ·¾¶
+    // å°†æ¨¡æ¿æ–‡ä»¶å¤¹ScriptTemplateså¼€å§‹çš„ç›¸å¯¹è·¯å¾„è½¬ä¸ºç»å¯¹è·¯å¾„
     private string GetTemplatePath(string path)
     {
         const string TEMPLATE_FOLDER = "ScriptTemplates";
-        string[] paths = AssetDatabase.FindAssets(TEMPLATE_FOLDER, new string[] { "Assets/Scripts" });
+        string[] paths = AssetDatabase.FindAssets(TEMPLATE_FOLDER, new[] { "Assets/Editor" });
         if (paths.Length == 0)
-            throw new System.Exception("Î´ÕÒµ½Ä£°åÎÄ¼ş¼Ğ" + TEMPLATE_FOLDER);
+            throw new System.Exception("æœªæ‰¾åˆ°æ¨¡æ¿æ–‡ä»¶å¤¹" + TEMPLATE_FOLDER);
         string folder = AssetDatabase.GUIDToAssetPath(paths[0]);
         return Path.Join(folder, path);
     }

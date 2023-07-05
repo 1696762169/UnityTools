@@ -1,0 +1,10 @@
+using System.Collections.Generic;
+using UnityEngine;
+
+/// <summary>
+/// $ClassComment$
+/// </summary>
+public class $ShortClassName$DB : ReadonlyDB<$ShortClassName$Data, $ShortClassName$Data.$ShortClassName$DataRaw>
+{
+	
+}

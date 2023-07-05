@@ -4,7 +4,7 @@ using UnityEngine;
 /// <summary>
 /// $ClassComment$
 /// </summary>
-public class $ShortClassName$Mgr : RuntimeMgr<$ShortClassName$Mgr, $ShortClassName$>
+public class $ShortClassName$DM : RuntimeDM<$ShortClassName$DM, $ShortClassName$>
 {
     
 }

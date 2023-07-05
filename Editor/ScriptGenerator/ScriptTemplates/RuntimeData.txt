@@ -8,9 +8,9 @@ public class $ShortClassName$ : IUnique
 {
     public int ID { get; protected set; }
 
-    [NonSerializedField]
+    [NonSerializeJson]
     public $ShortClassName$Data Data => $ShortClassName$DB.Instance.GetValue(m_DataID);
-    [SerializeField]
+    [SerializeJson]
     protected int m_DataID;
 
     public $ShortClassName$(int id)

@@ -10,12 +10,15 @@ public class TestEnvironmentEditor : EditorWindow
     private SerializedObject m_SerializedTestEnvironment;
     private string[] m_TestEnvironmentNames;
     private int m_SelectedIndex = -1;
+
+    public string ResourcesPath => Application.dataPath + "/Resources";
+    public string AssetsPath => Application.dataPath + "/Resources/TestEnvironment/";
     public const string DEFAULT_RESOURCE_NAME = "TestEnvironment\\DefaultTestEnvironment";
 
-    [MenuItem("Tools/²âÊÔ»·¾³ÅäÖÃ")]
+    [MenuItem("Tools/æµ‹è¯•ç¯å¢ƒé…ç½®")]
     public static void ShowWindow()
     {
-        GetWindow<TestEnvironmentEditor>("²âÊÔ»·¾³ÅäÖÃ");
+        GetWindow<TestEnvironmentEditor>("æµ‹è¯•ç¯å¢ƒé…ç½®");
     }
 
     private void OnEnable()
@@ -26,25 +29,20 @@ public class TestEnvironmentEditor : EditorWindow
 
     private void LoadTestEnvironmentNames()
     {
-        string resourcesPath = Application.dataPath + "/Resources";
-        DirectoryInfo resourcesDirectory = new DirectoryInfo(resourcesPath);
+        DirectoryInfo resourcesDirectory = new(AssetsPath);
         FileInfo[] testEnvironmentFiles = resourcesDirectory.GetFiles("*.asset", SearchOption.AllDirectories);
 
         m_TestEnvironmentNames = new string[testEnvironmentFiles.Length];
         for (int i = 0; i < testEnvironmentFiles.Length; i++)
         {
-            string temp = Path.GetRelativePath(resourcesPath, testEnvironmentFiles[i].FullName);
+            string temp = Path.GetRelativePath(ResourcesPath, testEnvironmentFiles[i].FullName);
             m_TestEnvironmentNames[i] = Path.Combine(Path.GetDirectoryName(temp), Path.GetFileNameWithoutExtension(temp));
         }
     }
 
     private void SelectCurrentResource()
     {
-        int index = -1;
-        if (TestEnvironment.CurrentPath != null)
-            index = System.Array.IndexOf(m_TestEnvironmentNames, TestEnvironment.CurrentPath);
-        else
-            index = System.Array.IndexOf(m_TestEnvironmentNames, DEFAULT_RESOURCE_NAME);
+        int index = System.Array.IndexOf(m_TestEnvironmentNames, TestEnvironment.CurrentPath ?? DEFAULT_RESOURCE_NAME);
         if (index >= 0)
         {
             LoadTestEnvironmentAtIndex(index);
@@ -57,13 +55,13 @@ public class TestEnvironmentEditor : EditorWindow
         m_TestEnvironment = Resources.Load<TestEnvironment>(m_TestEnvironmentNames[index]);
         m_SerializedTestEnvironment = new SerializedObject(m_TestEnvironment);
 
-        // ¸üĞÂ TestEnvironment.Current ÊôĞÔµÄÖµ
+        // æ›´æ–° TestEnvironment.Current å±æ€§çš„å€¼
         TestEnvironment.SetCurrent(m_TestEnvironmentNames[index]);
     }
 
     private void OnGUI()
     {
-        EditorGUILayout.LabelField("Ñ¡Ôñ²âÊÔ»·¾³", EditorStyles.boldLabel);
+        EditorGUILayout.LabelField("é€‰æ‹©æµ‹è¯•ç¯å¢ƒ", EditorStyles.boldLabel);
         int newIndex = EditorGUILayout.Popup(m_SelectedIndex, m_TestEnvironmentNames);
 
         if (newIndex != m_SelectedIndex)
@@ -73,7 +71,7 @@ public class TestEnvironmentEditor : EditorWindow
 
         if (m_SerializedTestEnvironment == null)
         {
-            EditorGUILayout.HelpBox($"Ä¬ÈÏ×ÊÔ´ \"{DEFAULT_RESOURCE_NAME}\" ²»´æÔÚ¡£Çë´ÓÏÂÀ­ÁĞ±íÖĞÑ¡ÔñÒ»¸ö²âÊÔ»·¾³¡£", MessageType.Warning);
+            EditorGUILayout.HelpBox($"é»˜è®¤èµ„æº \"{DEFAULT_RESOURCE_NAME}\" ä¸å­˜åœ¨ã€‚è¯·ä»ä¸‹æ‹‰åˆ—è¡¨ä¸­é€‰æ‹©ä¸€ä¸ªæµ‹è¯•ç¯å¢ƒã€‚", MessageType.Warning);
             return;
         }
 

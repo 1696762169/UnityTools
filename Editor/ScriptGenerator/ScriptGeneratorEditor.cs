@@ -5,16 +5,16 @@ using UnityEditor;
 using System.IO;
 
 /// <summary>
-/// Ê¹ÓÃ½Å±¾Éú³ÉÆ÷µÄ±à¼­Æ÷½Å±¾
+/// ä½¿ç”¨è„šæœ¬ç”Ÿæˆå™¨çš„ç¼–è¾‘å™¨è„šæœ¬
 /// </summary>
 [CustomEditor(typeof(ScriptGeneratorGUI))]
 public class ScriptGeneratorEditor : Editor
 {
-    protected bool m_Ensure = false;
-    protected string[] m_Content = new string[] { "È·ÈÏ", "È¡Ïû" };
+    private bool m_Ensure = false;
+    private readonly string[] m_Content = { "ç¡®è®¤", "å–æ¶ˆ" };
 
-    // Ä£°åÂ·¾¶
-    protected Dictionary<ScriptTemplateType, string> m_TemplatePath = new Dictionary<ScriptTemplateType, string>()
+	// æ¨¡æ¿è·¯å¾„
+	private readonly Dictionary<ScriptTemplateType, string> m_TemplatePath = new()
     {
         { ScriptTemplateType.ReadOnlyData, "ReadOnlyData" },
         { ScriptTemplateType.ReadOnlyDB, "ReadOnlyDB" },
@@ -33,24 +33,24 @@ public class ScriptGeneratorEditor : Editor
         base.OnInspectorGUI();
 
         GUILayout.Space(20);
-        if (GUILayout.Button("Éú³É½Å±¾") || m_Ensure)
+        if (GUILayout.Button("ç”Ÿæˆè„šæœ¬") || m_Ensure)
         {
             ScriptGeneratorGUI sg = target as ScriptGeneratorGUI;
 
-            // È·ÈÏÊÇ·ñĞèÒª¸²¸Ç
+            // ç¡®è®¤æ˜¯å¦éœ€è¦è¦†ç›–
             bool execute = !File.Exists(ScriptGenerator.GetTargetPath(sg.target));
             if (!execute)
             {
                 if (!sg.overwrite)
                 {
-                    Debug.LogWarning($"ÎŞ·¨Éú³É½Å±¾£º{sg.target}£¬¸ÃÂ·¾¶ÒÑÓĞÍ¬Ãû½Å±¾");
+                    Debug.LogWarning($"æ— æ³•ç”Ÿæˆè„šæœ¬ï¼š{sg.target}ï¼Œè¯¥è·¯å¾„å·²æœ‰åŒåè„šæœ¬");
                     return;
                 }
                 else
                 {
                     m_Ensure = true;
                     GUILayout.Space(10);
-                    GUILayout.Label("È·ÈÏÒªÓÃÄ£°å¸²¸ÇÒÑÓĞµÄ´úÂëÂğ£¿");
+                    GUILayout.Label("ç¡®è®¤è¦ç”¨æ¨¡æ¿è¦†ç›–å·²æœ‰çš„ä»£ç å—ï¼Ÿ");
                     switch (GUILayout.SelectionGrid(-1, m_Content, 2, GUILayout.Width(150)))
                     {
                         case 0:
@@ -64,10 +64,10 @@ public class ScriptGeneratorEditor : Editor
                 }
             }
             
-            // Éú³É´úÂë
+            // ç”Ÿæˆä»£ç 
             if (execute)
             {
-                // Éú³ÉÄ£°å²ÎÊıÌæ»»×Öµä
+                // ç”Ÿæˆæ¨¡æ¿å‚æ•°æ›¿æ¢å­—å…¸
                 Dictionary<string, string> dict = new Dictionary<string, string>
                 {
                     { "ShortClassName", sg.shortClassName },
