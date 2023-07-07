@@ -31,7 +31,7 @@ public class ExcelEditor : Editor
         }
     }
 
-	public static void GenerateFile(Type type, string filePath, bool overwrite = false)
+	public static void GenerateFile(Type type, string filePath, bool config = false, bool overwrite = false)
 	{
 		string typeName = type.Name.Replace("Raw", "");
 		// 检查文件是否存在
@@ -45,16 +45,16 @@ public class ExcelEditor : Editor
 		}
 
 		// 设置样式
-		var config = new OpenXmlConfiguration()
+		var configuration = new OpenXmlConfiguration()
 		{
 			TableStyles = TableStyles.None,
 			DynamicColumns = new DynamicExcelColumn[type.GetProperties().Length + 1]
 		};
 
 		// 准备数据
-		var value = new List<Dictionary<string, string>>();
-		for (int i = 0; i < 3; i++)
-			value.Add(new Dictionary<string, string>());
+		var value = new List<Dictionary<string, object>>();
+		for (int i = 0; i < (config ? 3 : 4); i++)
+			value.Add(new Dictionary<string, object>());
 		int pCount = 0;
 		int ignoreCount = 0;
 		foreach (var property in type.GetProperties())
@@ -62,19 +62,23 @@ public class ExcelEditor : Editor
 			// 忽略某些列
 			if (property.GetCustomAttribute<ExcelIgnoreAttribute>() != null)
 			{
-				config.DynamicColumns[pCount++] = new DynamicExcelColumn(property.Name) { Ignore = true };
+				configuration.DynamicColumns[pCount++] = new DynamicExcelColumn(property.Name) { Ignore = true };
 				++ignoreCount;
 				continue;
 			}
-			// 填充空行
+			// 写入注释（空行）
 			value[0].Add(property.Name, "");
 			// 写入类型
 			value[1].Add(property.Name, GetShortName(property.PropertyType));
 			// 写入列名
 			var name = property.GetCustomAttribute<ExcelColumnNameAttribute>();
-			value[2].Add(property.Name, name != null ? name.ExcelColumnName : property.Name);
+			string propertyName = name != null ? name.ExcelColumnName : property.Name;
+			value[2].Add(property.Name, propertyName);
+			// 写入默认值
+			if (!config)
+				value[3].Add(property.Name, property.PropertyType.IsValueType ? Activator.CreateInstance(property.PropertyType) : null);
 			// 设置列宽
-			config.DynamicColumns[pCount++] = new DynamicExcelColumn(property.Name)
+			configuration.DynamicColumns[pCount++] = new DynamicExcelColumn(property.Name)
 			{
 				Width = GetWidth(property),
 				Index = pCount - ignoreCount - 1,
@@ -84,7 +88,7 @@ public class ExcelEditor : Editor
 
 		// 添加注释
 		const string COMMENT = "__Comment";
-		config.DynamicColumns[pCount++] = new DynamicExcelColumn(COMMENT)
+		configuration.DynamicColumns[pCount++] = new DynamicExcelColumn(COMMENT)
 		{
 			Width = 60,
 			Index = pCount - ignoreCount - 1,
@@ -93,22 +97,24 @@ public class ExcelEditor : Editor
 		value[0].Add(COMMENT, "第一行可以用来给属性写注释，这一列可以用来给每条数据写备注");
 		value[1].Add(COMMENT, "第二行是属性数据类型，不会被读取，可以修改");
 		value[2].Add(COMMENT, "第三行是属性名称，会被读取，不可更改");
+		if (!config)
+			value[3].Add(COMMENT, "第四行是属性默认值，可以不填");
 
-		MiniExcel.SaveAs(filePath, value, false, typeName, ExcelType.XLSX, config, true);
+		MiniExcel.SaveAs(filePath, value, false, typeName, ExcelType.XLSX, configuration, true);
 	}
-	public static void GenerateFile(Type type, bool overwrite = false)
+	public static void GenerateFile(Type type, bool config = false, bool overwrite = false)
 	{
 		string typeName = type.Name.Replace("Raw", "");
 		string filePath = $"{Application.streamingAssetsPath}/{typeName}s.xlsx";
-		GenerateFile(type, filePath, overwrite);
+		GenerateFile(type, filePath, config, overwrite);
 	}
-	public static void GenerateFile<T>(string filePath, bool overwrite = false)
+	public static void GenerateFile<T>(string filePath, bool config = false, bool overwrite = false)
 	{
-		GenerateFile(typeof(T), filePath, overwrite);
+		GenerateFile(typeof(T), filePath, config, overwrite);
 	}
-	public static void GenerateFile<T>(bool overwrite = false) where T : class, new()
+	public static void GenerateFile<T>(bool config = false, bool overwrite = false) where T : class, new()
 	{
-		GenerateFile(typeof(T), overwrite);
+		GenerateFile(typeof(T), config, overwrite);
 	}
 
 	private static string GetShortName(Type type)

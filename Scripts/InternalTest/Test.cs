@@ -9,8 +9,10 @@ public class Test : MonoBehaviour
     {
         // UI测试
         //UIMgrTest();
-        // 数据测试
-        DataTest();
+        // 配置数据测试
+        //ConfigTest();
+        // 只读数据测试
+        ReadonlyTest();
 	}
 	protected void Update()
     {
@@ -68,13 +70,17 @@ public class Test : MonoBehaviour
         UIMgr.Instance.ShowPanel<PanelBase>("UI/StartPanel");
     }
 
-    void DataTest()
+    void ConfigTest()
     {
 		TestGlobalConfigJson tc = new TestGlobalConfigJson().InitInstance();
 		TestGlobalConfigJson2 tc2 = new TestGlobalConfigJson2().InitInstance();
 		TestGlobalConfigJson tc3 = new TestGlobalConfigJson().InitInstance();
+    }
 
-	}
+    void ReadonlyTest()
+    {
+        ExcelTestDB db = new ExcelTestDB().InitInstance() as ExcelTestDB;
+    }
 }
 
 public class TestGlobalConfigJson : GlobalConfigJson<TestGlobalConfigJson>
@@ -83,6 +89,11 @@ public class TestGlobalConfigJson : GlobalConfigJson<TestGlobalConfigJson>
 }
 
 public class TestGlobalConfigJson2 : GlobalConfigJson<TestGlobalConfigJson2>
+{
+
+}
+
+public class ExcelTestDB : ReadonlyDB<ExcelTestData, ExcelTestData>
 {
 
 }

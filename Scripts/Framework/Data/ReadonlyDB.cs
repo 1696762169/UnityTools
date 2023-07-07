@@ -1,13 +1,10 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using MiniExcelLibs;
-using Unity.VisualScripting;
-using Newtonsoft.Json.Linq;
 using System;
 using System.Linq;
 using System.Reflection;
-using LitJson;
+using static UnityEditorInternal.ReorderableList;
 
 // 保证只读数据有一个ID字段
 public interface IUnique
@@ -76,24 +73,31 @@ public abstract class ReadonlyDB<TValue, TRaw> : ControlledSingleton<ReadonlyDB<
     // 存储数据的字典
     protected Dictionary<int, TValue> Data { get; } = new();
     public TValue this[int id] => Data[id];
-    /// <summary>
-    /// 初始化数据
-    /// </summary>
-    public override ReadonlyDB<TValue, TRaw> InitInstance()
+
+	/// <summary>
+	/// 初始化数据
+	/// </summary>
+	public override ReadonlyDB<TValue, TRaw> InitInstance()
     {
 	    base.InitInstance();
+
+	    TRaw @default = MiniExcel.Query<TRaw>(FilePath, SheetName, ExcelType.XLSX, "A3").First();
+        List<(PropertyInfo, object, bool)> defaults = (from property in typeof(TRaw).GetProperties()
+	        where !IsDefault(property,
+		        property.GetValue(@default))
+	        select (property, property.GetValue(@default), property.GetValue(@default) is string str && str.EndsWith("/*"))).ToList();
 
         foreach (TRaw line in MiniExcel.Query<TRaw>(FilePath, SheetName, ExcelType.XLSX, "A3"))
         {
             if (line.ID == 0)
                 continue;
-            Data.Add(line.ID, ProcessRaw(line));
+            Data.Add(line.ID, ProcessRaw(line, defaults));
         }
         InitExtend();
         return this;
     }
 
-    public virtual void InitExtend() { }
+    protected virtual void InitExtend() { }
     
     public TValue GetOriginValue(int id)
     {
@@ -108,7 +112,22 @@ public abstract class ReadonlyDB<TValue, TRaw> : ControlledSingleton<ReadonlyDB<
     public bool Contains(int id) => Data.ContainsKey(id);
 
     // 将从Excel表格中读取到的原始数据转换为实际使用的数据
-    protected virtual TValue ProcessRaw(TRaw raw) => Activator.CreateInstance(typeof(TValue), raw) as TValue;
+    protected virtual TValue ProcessRaw(TRaw raw, IEnumerable<(PropertyInfo, object, bool)> defaults)
+    {
+	    foreach ((PropertyInfo property, object value, bool isPath) in defaults)
+		{
+			if (isPath)
+				property.SetValue(raw, (value as string).TrimEnd('*') + property.GetValue(raw));
+			else if (IsDefault(property, property.GetValue(raw)))
+                property.SetValue(raw, value);
+	    }
+	    return Activator.CreateInstance(typeof(TValue), raw) as TValue;
+    }
+
+    private static bool IsDefault(PropertyInfo property, object value)
+    {
+	    return Equals(value, property.PropertyType.IsValueType ? Activator.CreateInstance(property.PropertyType) : null);
+	}
 }
 
 /// <summary>

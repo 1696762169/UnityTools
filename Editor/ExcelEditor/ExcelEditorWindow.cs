@@ -14,6 +14,7 @@ public class ExcelEditorWindow : EditorWindow
     // UI属性
     private string m_DataType;
     private string m_FileName;
+    private bool m_Config;
     private bool m_Overwrite;
 
     // 添加菜单项以打开窗口
@@ -30,6 +31,7 @@ public class ExcelEditorWindow : EditorWindow
         // 绘制UI
         m_DataType = EditorGUILayout.TextField("待创建表格的对象类型", m_DataType);
         m_FileName = EditorGUILayout.TextField("待创建的表格文件名", m_FileName);
+        m_Config = EditorGUILayout.Toggle("使用全局配置表格式", m_Config);
         m_Overwrite = EditorGUILayout.Toggle("是否覆盖原文件", m_Overwrite);
 
         EditorGUILayout.Space();
@@ -48,7 +50,7 @@ public class ExcelEditorWindow : EditorWindow
         if (type != null && GUILayout.Button("生成表格文件", GUILayout.Width(150)))
         {
             string fileName = string.IsNullOrWhiteSpace(m_FileName) ? type.Name.Replace("Raw", "") + "s" : m_FileName;
-            ExcelEditor.GenerateFile(type, $"{Application.streamingAssetsPath}/{fileName}.xlsx", m_Overwrite);
+            ExcelEditor.GenerateFile(type, $"{Application.streamingAssetsPath}/{fileName}.xlsx", m_Config, m_Overwrite);
             Debug.Log($"文件{fileName}.xlsx生成成功");
         }
     }
