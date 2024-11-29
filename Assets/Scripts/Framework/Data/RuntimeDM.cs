@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using LitJson;
 using System.Collections;
 using System.Collections.Generic;
@@ -8,36 +8,36 @@ using UnityEngine;
 /// <summary>
 /// 运行时管理器接口
 /// </summary>
-public interface IRuntimeDM<TDM>
+public interface IRuntimeDM
 {
-	/// <summary>
-	/// 初始化数据
-	/// </summary>
-	/// <param name="index"></param>
-	public TDM InitInstance(int index);
 	/// <summary>
 	/// 保存当前数据
 	/// </summary>
 	public void SaveData();
 	/// <summary>
+	/// 保存当前数据到指定编号的存档
+	/// </summary>
+	public void SaveDataToIndex(int index);
+	/// <summary>
 	/// 重置数据
 	/// </summary>
 	public void ResetData();
+	public int CurFileIndex { get; }
 }
 
 /// <summary>
 /// 玩家运行时资源管理器（支持多存档）（非聚合类）
 /// </summary>
-public abstract class RuntimeDM<TDM> : ControlledSingleton<RuntimeDM<TDM>>, IRuntimeDM<TDM>
+public abstract class RuntimeDM<TDM> : IDisposable, IRuntimeDM
 	where TDM : RuntimeDM<TDM>, new()
 {
-	// 当前使用的存档编号 0表示测试存档 -1表示未开始使用存档
+	public static TDM Instance { get; private set; }
 	public int CurFileIndex { get; protected set; } = -1;
-
 	// 文件路径
 	protected virtual string FileName => typeof(TDM).Name;
 	protected virtual string FileDir => $"{Application.persistentDataPath}/{FileName}";
-	protected virtual string FilePath => $"{FileDir}/{FileName}_{CurFileIndex}.json";
+	[NonSerializeJson]
+	public virtual string FilePath => $"{FileDir}/{FileName}_{CurFileIndex}.json";
 
 	// 是否已经初始化过
 	public static bool Inited { get; protected set; }
@@ -45,63 +45,70 @@ public abstract class RuntimeDM<TDM> : ControlledSingleton<RuntimeDM<TDM>>, IRun
 	/// <summary>
 	/// 初始化数据
 	/// </summary>
-	public virtual TDM InitInstance(int index)
+	public static void InitInstance(int index)
 	{
-		base.InitInstance();
+		Instance = new TDM();
+		Instance.CurFileIndex = index;
 
 		if (!Inited)
 		{
-			InitOnce();
+			Instance.InitOnce();
 			Inited = true;
 		}
 
-		TDM instance;
 		bool save = false;
-
+#if UNITY_EDITOR
 		// 使用测试数据
-		if ((GameManager.Instance.test || index == 0) && UseTestData())
+		if (Instance.UseTestData())
 		{
-			instance = new TDM();
-			instance.PreProcess();
-			instance.InitTestData();
+			Instance.InitTestData();
+			Instance.CurFileIndex = index;
+			return;
 		}
 		// 使用存档数据
 		else
+#endif
 		{
 			try
 			{
-				instance = LoadData();
+				Instance = Instance.LoadData();
+				Instance.PostProcess();
 			}
-			catch
+			catch (Exception)
 			{
-				instance = new TDM();
-				instance.PreProcess();
-				instance.InitData();
+				//Debug.LogException(e);
+				Instance = new TDM();
+				Instance.PreProcess();
+				Instance.InitData();
+				Instance.PostProcess();
 				save = true;
 			}
 		}
-		instance.PostProcess();
-		instance.CurFileIndex = index;
+
+		Instance.CurFileIndex = index;
 		if (save)
-			instance.SaveData();
-		return instance;
-		
+			Instance.SaveData();
 	}
+	public static void InitInstance() => InitInstance(0);
 
 	/// <summary>
 	/// 保存数据
 	/// </summary>
 	public virtual void SaveData()
 	{
-#if UNITY_EDITOR
-		if (!GameManager.Instance.Initializing && GameManager.Instance.test && !GameManager.Instance.saveTestData)
-		{
-			return;
-		}
-#endif
 		if (!Directory.Exists(FileDir))
 			Directory.CreateDirectory(FileDir);
 		File.WriteAllText(FilePath, JsonMapper.ToJson(this));
+	}
+	/// <summary>
+	/// 保存数据
+	/// </summary>
+	public void SaveDataToIndex(int index)
+	{
+		int temp = CurFileIndex;
+		CurFileIndex = index;
+		SaveData();
+		CurFileIndex = temp;
 	}
 	/// <summary>
 	/// 加载数据
@@ -133,9 +140,14 @@ public abstract class RuntimeDM<TDM> : ControlledSingleton<RuntimeDM<TDM>>, IRun
 	protected virtual void PreProcess() { }
 	// 加载/初始化数据后进行的处理
 	protected virtual void PostProcess() { }
+
+	public virtual void Dispose()
+	{
+		Instance = null;
+	}
 }
 
-public interface IRuntimeDM<TDM, TValue> : IRuntimeDM<TDM>, IGetOriginValue<TValue>
+public interface IRuntimeDM<TValue> : IRuntimeDM, IGetOriginValue<TValue>
 {
 	public int DataCount { get; }
 	/// <summary>
@@ -151,7 +163,7 @@ public interface IRuntimeDM<TDM, TValue> : IRuntimeDM<TDM>, IGetOriginValue<TVal
 /// <summary>
 /// 玩家运行时资源管理器（支持多存档）（聚合类）
 /// </summary>
-public abstract class RuntimeDM<TDM, TValue> : RuntimeDM<TDM>, IRuntimeDM<TDM, TValue>
+public abstract class RuntimeDM<TDM, TValue> : RuntimeDM<TDM>, IRuntimeDM<TValue>
 	where TDM : RuntimeDM<TDM, TValue>, new()
 	where TValue : class, IUnique, new()
 {

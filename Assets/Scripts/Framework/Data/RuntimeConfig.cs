@@ -12,17 +12,13 @@ public abstract class RuntimeConfig<TConfig> : RuntimeDM<TConfig>
 	where TConfig : RuntimeConfig<TConfig>, new()
 {
 	protected override string FileDir => Application.persistentDataPath;
-	protected override string FilePath => $"{FileDir}/{FileName}.json";
+	public override string FilePath => $"{FileDir}/{FileName}.json";
 
 	/// <summary>
     /// 初始化数据
     /// </summary>
-    public override TConfig InitInstance(int index)
+    public new static void InitInstance(int index)
     {
-	    return base.InitInstance(0);
+	    RuntimeDM<TConfig>.InitInstance(0);
     }
-	public new TConfig InitInstance()
-	{
-		return base.InitInstance(0);
-	}
 }
