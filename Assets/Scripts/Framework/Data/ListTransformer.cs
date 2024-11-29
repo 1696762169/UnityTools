@@ -1,9 +1,5 @@
-using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
-using System.Reflection;
 using LitJson;
-using Newtonsoft.Json.Linq;
 
 public abstract class ListTransformer<T>
 {
