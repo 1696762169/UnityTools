@@ -1504,8 +1504,10 @@ namespace Sirenix.OdinInspector.Modules.Addressables.Editor
     /// </summary>
     public static class OdinAddressableUtility
     {
-        private readonly static Action openAddressableWindowAction;
+        private static readonly Action openAddressableWindowAction;
+#pragma warning disable CS0414 // 字段已被赋值，但它的值从未被使用
         private static bool hasLoggedPackablesMissingError = false;
+#pragma warning restore CS0414 // 字段已被赋值，但它的值从未被使用
         
         static OdinAddressableUtility()
         {
