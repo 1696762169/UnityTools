@@ -1,50 +1,70 @@
-using System;
+﻿using System;
 using LitJson;
-using System.Collections;
-using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
-using MiniExcelLibs;
 
 /// <summary>
 /// Json格式的全局配置类
 /// </summary>
-public abstract class GlobalConfigJson<T> : ControlledSingleton<GlobalConfigJson<T>>
-	where T : GlobalConfigJson<T>, new()
+public class GlobalConfigJson<T> : IDisposable where T : GlobalConfigJson<T>, new()
 {
-    [NonSerializeJson]
-    protected virtual string FileName => typeof(T).Name;
-    [NonSerializeJson]
-    protected virtual string FilePath => $"{Application.streamingAssetsPath}/{FileName}.json";
+	public static T Instance
+	{
+		get
+		{
+			if (m_Instance != null)
+				return m_Instance;
+			m_Instance = new T().InitInstance();
+			return m_Instance;
+		}
+	}
+	private static T m_Instance;
 
-    public new virtual T InitInstance()
-    {
-        base.InitInstance();
+    [NonSerializeJson]
+    public virtual string FileName => typeof(T).Name;
+    [NonSerializeJson]
+    public virtual string FileDir => "";
+    [NonSerializeJson]
+#if UNITY_ANDROID && !UNITY_EDITOR
+    public string FilePath => Path.Combine(AndroidConfigInit.ConfigRoot, $"{FileDir}{FileName}.json");
+#else
+    public string FilePath => $"{Application.streamingAssetsPath}/{FileDir}{FileName}.json";
+#endif
 
-        try
-	    {
-		    if (!FilePath.EndsWith("json"))
-			    throw new ArgumentException($"全局配置文件【{FilePath}】不是json文件");
-		    T instance;
-		    if (!File.Exists(FilePath))
-		    {
-                instance = new T();
-				File.WriteAllText(FilePath, JsonMapper.ToJson(instance));
-				Debug.LogWarning($"全局配置文件【{FilePath}】不存在，已新建文件");
-		    }
-		    else
-		    {
-				instance = JsonMapper.ToObject<T>(File.ReadAllText(FilePath));
+	public T InitInstance()
+	{
+		try
+		{
+			T instance = JsonMapper.ToObject<T>(File.ReadAllText(FilePath));
+			instance.InitExtend();
+			return instance;
+		}
+		catch
+		{
+			if (!File.Exists(FilePath))
+			{
+				// 创建文件
+				T instance = new T();
 				instance.InitExtend();
+				File.WriteAllText(FilePath, JsonMapper.ToJson(instance));
+				Debug.LogWarning($"全局配置文件【{FileName}】不存在，已新建文件");
+				return instance;
 			}
-		    return instance;
-	    }
-        catch
-        {
-            HasInstance = false;
-            throw new FileNotFoundException($"无法读取全局配置文件：{FilePath}");
-        }
-    }
+			else
+			{
+				throw new FileNotFoundException($"无法读取全局配置文件：{FileName}");
+			}
+		}
+	}
+
+#if UNITY_EDITOR
+	public virtual void SaveDataEditor() => File.WriteAllText(FilePath, JsonMapper.ToJson(this));
+#endif
 
     protected virtual void InitExtend() { }
+
+    public virtual void Dispose()
+    {
+	    m_Instance = null;
+    }
 }

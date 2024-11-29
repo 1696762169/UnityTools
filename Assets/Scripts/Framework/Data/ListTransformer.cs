@@ -1,4 +1,7 @@
+using System.Collections;
 using System.Collections.Generic;
+using UnityEngine;
+using System.Reflection;
 using LitJson;
 
 public abstract class ListTransformer<T>
