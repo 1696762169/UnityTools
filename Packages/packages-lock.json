@@ -1,5 +1,12 @@
 {
   "dependencies": {
+    "com.cysharp.unitask": {
+      "version": "https://github.com/Cysharp/UniTask.git?path=src/UniTask/Assets/Plugins/UniTask",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "f213ff497e4ff462a77319cf677cf20cc0860ca9"
+    },
     "com.unity.addressables": {
       "version": "1.22.2",
       "depth": 0,
@@ -182,6 +189,13 @@
         "com.unity.modules.jsonserialize": "1.0.0"
       },
       "url": "https://packages.unity.cn"
+    },
+    "jp.hadashikick.vcontainer": {
+      "version": "https://github.com/hadashiA/VContainer.git?path=VContainer/Assets/VContainer#1.16.5",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "dda70a5b210c8b8d373bd957c715e9149779dd76"
     },
     "nuget-packages": {
       "version": "file:nuget-packages",
