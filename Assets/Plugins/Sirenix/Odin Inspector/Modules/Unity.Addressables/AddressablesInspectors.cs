@@ -4,6 +4,8 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
+#if UNITY_EDITOR
+
 using System;
 using Sirenix.OdinInspector;
 using Sirenix.OdinInspector.Modules.Addressables.Editor.Internal;
@@ -1747,4 +1749,6 @@ namespace Sirenix.OdinInspector.Modules.Addressables.Editor
         }
     }
 }
+#endif
+
 #endif

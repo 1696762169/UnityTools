@@ -4,6 +4,8 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
+#if UNITY_EDITOR
+
 using System.Reflection;
 using UnityEditor.AddressableAssets.Settings;
 
@@ -21,3 +23,5 @@ namespace Sirenix.OdinInspector.Modules.Addressables.Editor.Internal
 		internal static void EnsureConstructed() { }
 	}
 }
+
+#endif

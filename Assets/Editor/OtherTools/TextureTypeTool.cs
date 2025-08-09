@@ -6,9 +6,9 @@ using UnityEngine;
 
 public class TextureTypeTool : MonoBehaviour
 {
-    [Tooltip("¸ùÄ¿Â¼£¨»á³¢ÊÔ½«´ËÄ¿Â¼ÖĞµÄËùÓĞÍ¼Æ¬ĞŞ¸ÄÎªÖ¸¶¨ÀàĞÍ£©")]
+    [Tooltip("æ ¹ç›®å½•ï¼ˆä¼šå°è¯•å°†æ­¤ç›®å½•ä¸­çš„æ‰€æœ‰å›¾ç‰‡ä¿®æ”¹ä¸ºæŒ‡å®šç±»å‹ï¼‰")]
     public string root;
-    [Tooltip("ĞèÒªĞŞ¸ÄÎªµÄÀàĞÍ")]
+    [Tooltip("éœ€è¦ä¿®æ”¹ä¸ºçš„ç±»å‹")]
     public TextureImporterType type;
     protected void Start()
     {
