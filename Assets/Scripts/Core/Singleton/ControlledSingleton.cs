@@ -1,14 +1,11 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Runtime.InteropServices.WindowsRuntime;
-using UnityEngine;
 
 /// <summary>
 /// 可控制访问权限的单例对象基类
 /// </summary>
 public abstract class ControlledSingleton<T> : IDisposable where T : ControlledSingleton<T>
 {
+	// ReSharper disable once StaticMemberInGenericType
 	public static bool HasInstance { get; protected set; }
 
 	public virtual T InitInstance()

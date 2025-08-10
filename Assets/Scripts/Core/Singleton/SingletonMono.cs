@@ -1,11 +1,9 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
 /// 全局单例Mono对象基类
 /// </summary>
-public class SingletonMono<T> : MonoBehaviour where T : SingletonMono<T>
+public abstract class SingletonMono<T> : MonoBehaviour where T : SingletonMono<T>
 {
     public static T Instance { get; protected set; }
 
