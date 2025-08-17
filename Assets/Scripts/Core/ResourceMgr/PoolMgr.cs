@@ -2,10 +2,10 @@
 using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
-using Sirenix.OdinInspector.Editor;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.Events;
+using UnityEngine.ResourceManagement.ResourceLocations;
 
 /// <summary>
 /// 缓存池类
@@ -14,12 +14,57 @@ using UnityEngine.Events;
 public class PoolMgr : SingletonBase<PoolMgr>
 {
 	private readonly GameObject m_PoolParent;
+	private readonly GameObject m_PoolParentPermanent;
 	private readonly Dictionary<string, Pool> m_Pools = new();
 	public PoolMgr()
 	{
 		m_PoolParent = new GameObject("POOL_ROOT");
-		Object.DontDestroyOnLoad(m_PoolParent);
+		m_PoolParentPermanent = new GameObject("POOL_ROOT_PERMANENT");
+		Object.DontDestroyOnLoad(m_PoolParentPermanent);
 	}
+
+	#region Addressables API
+
+	/// <summary>
+	/// 从Addressables缓存池中异步获取对象
+	/// </summary>
+	/// <param name="addressablesKey">Addressables资源Key</param>
+	/// <param name="customPoolName">自定义缓存池名称 默认使用资源路径作为名称</param>
+	public async UniTask<GameObject> FetchAsync(string addressablesKey, string customPoolName = null)
+	{
+		string poolName = GetPoolName(PoolType.Addressables, customPoolName ?? addressablesKey);
+		return await FetchAsync(poolName, addressablesKey, AddressablesLoadAsync);
+	}
+
+	/// <summary>
+	/// 从Addressables缓存池中异步获取对象 并设置该对象位置与旋转信息
+	/// </summary>
+	/// <param name="addressablesKey">Addressables资源Key</param>
+	/// <param name="position">全局坐标位置</param>
+	/// <param name="rotation">全局旋转</param>
+	/// <param name="customPoolName">自定义缓存池名称 默认使用资源路径作为名称</param>
+	public async UniTask<GameObject> FetchAsync(string addressablesKey, Vector3 position, Quaternion rotation = default, string customPoolName = null)
+	{
+		string poolName = GetPoolName(PoolType.Addressables, customPoolName ?? addressablesKey);
+		GameObject obj = await FetchAsync(poolName, addressablesKey, AddressablesLoadAsync);
+		OnLoaded(obj, position, rotation);
+		return obj;
+	}
+
+	/// <summary>
+	/// 从Addressables缓存池中异步获取对象
+	/// </summary>
+	/// <param name="location">Addressables资源地址</param>
+	/// <param name="customPoolName">自定义缓存池名称 默认使用资源路径作为名称</param>
+	public async UniTask<GameObject> FetchAsync(IResourceLocation location, string customPoolName = null)
+	{
+		string poolName = GetPoolName(PoolType.Addressables, customPoolName ?? location.PrimaryKey);
+		return await FetchAsync(poolName, location, AddressablesLoadAsync);
+	}
+
+	#endregion
+
+	#region Resources API
 
 	/// <summary>
 	/// 从Resources缓存池中同步获取对象
@@ -36,7 +81,7 @@ public class PoolMgr : SingletonBase<PoolMgr>
 	/// 从Resources缓存池中同步获取对象 并设置该对象位置与旋转信息
 	/// </summary>
 	/// <param name="resourcesPath">Resources文件夹中的资源路径</param>
-	/// <param name="position">全部坐标位置</param>
+	/// <param name="position">全局坐标位置</param>
 	/// <param name="rotation">全局旋转</param>
 	/// <param name="customPoolName">自定义缓存池名称 默认使用资源路径作为名称</param>
 	public GameObject FetchResources(string resourcesPath, Vector3 position, Quaternion rotation = default, string customPoolName = null)
@@ -48,7 +93,7 @@ public class PoolMgr : SingletonBase<PoolMgr>
 	}
 
 	/// <summary>
-	/// 从Resources缓存池中同步获取对象
+	/// 从Resources缓存池中异步获取对象
 	/// </summary>
 	/// <param name="resourcesPath">Resources文件夹中的资源路径</param>
 	/// <param name="customPoolName">自定义缓存池名称 默认使用资源路径作为名称</param>
@@ -60,10 +105,10 @@ public class PoolMgr : SingletonBase<PoolMgr>
 	}
 
 	/// <summary>
-	/// 从Resources缓存池中同步获取对象 并设置该对象位置与旋转信息
+	/// 从Resources缓存池中异步获取对象 并设置该对象位置与旋转信息
 	/// </summary>
 	/// <param name="resourcesPath">Resources文件夹中的资源路径</param>
-	/// <param name="position">全部坐标位置</param>
+	/// <param name="position">全局坐标位置</param>
 	/// <param name="rotation">全局旋转</param>
 	/// <param name="customPoolName">自定义缓存池名称 默认使用资源路径作为名称</param>
 	/// <param name="token">取消加载标记</param>
@@ -74,6 +119,8 @@ public class PoolMgr : SingletonBase<PoolMgr>
 		OnLoaded(obj, position, rotation);
 		return obj;
 	}
+
+	#endregion
 
 	/// <summary>
 	/// 向缓存池归还对象
@@ -155,12 +202,12 @@ public class PoolMgr : SingletonBase<PoolMgr>
 		if (!m_Pools.TryGetValue(poolName, out Pool pool))
 			pool = m_Pools[poolName] = new Pool(poolName);
 
-		GameObject ret =  pool.Count > 0 ? pool.Pop() : createFunc(resPath);
+		GameObject ret = pool.Count > 0 ? pool.Pop() : createFunc(resPath);
 		ret.name = poolName;
 		return ret;
 	}
 
-	private async UniTask<GameObject> FetchAsync(string poolName, string resPath, System.Func<string, UniTask<GameObject>> createFunc)
+	private async UniTask<GameObject> FetchAsync<T>(string poolName, T resPath, System.Func<T, UniTask<GameObject>> createFunc)
 	{
 		if (!m_Pools.TryGetValue(poolName, out Pool pool))
 			pool = m_Pools[poolName] = new Pool(poolName);
@@ -179,6 +226,11 @@ public class PoolMgr : SingletonBase<PoolMgr>
 	private async UniTask<GameObject> AddressablesLoadAsync(string addressablePath)
 	{
 		var handle = Addressables.LoadAssetAsync<GameObject>(addressablePath);
+		return await handle.Task;
+	}
+	private async UniTask<GameObject> AddressablesLoadAsync(IResourceLocation resourceLocation)
+	{
+		var handle = Addressables.LoadAssetAsync<GameObject>(resourceLocation);
 		return await handle.Task;
 	}
 
@@ -208,6 +260,7 @@ public class PoolMgr : SingletonBase<PoolMgr>
 		{
 			obj.SetActive(false);
 			m_Objects.Push(obj);
+			// TODO: 配置是否自动设置父对象
 			if (moveToParent)
 				obj.transform.SetParent(parent);
 		}
