@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -24,14 +24,14 @@ public class Test : MonoBehaviour
     
     void PoolMgrTest()
     {
-        if (Input.GetMouseButtonDown(0))
-        {
-            PoolMgr.Instance.FetchAsync("Cube", Vector3.zero, Quaternion.identity);
-        }
-        if (Input.GetMouseButtonDown(1))
-        {
-            PoolMgr.Instance.FetchAsync("Sphere");
-        }
+        //if (Input.GetMouseButtonDown(0))
+        //{
+        //    PoolMgr.Instance.FetchAsync("Cube", Vector3.zero, Quaternion.identity);
+        //}
+        //if (Input.GetMouseButtonDown(1))
+        //{
+        //    PoolMgr.Instance.FetchAsync("Sphere");
+        //}
     }
 
     void MusicMgrTest()

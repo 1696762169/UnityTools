@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
@@ -13,13 +14,13 @@ using UnityEngine.ResourceManagement.ResourceLocations;
 /// </summary>
 public class PoolMgr : SingletonBase<PoolMgr>
 {
-	private readonly GameObject m_PoolParent;
-	private readonly GameObject m_PoolParentPermanent;
+	private readonly Transform m_PoolParent;
+	private readonly Transform m_PoolParentPermanent;
 	private readonly Dictionary<string, Pool> m_Pools = new();
 	public PoolMgr()
 	{
-		m_PoolParent = new GameObject("POOL_ROOT");
-		m_PoolParentPermanent = new GameObject("POOL_ROOT_PERMANENT");
+		m_PoolParent = new GameObject("POOL_ROOT").transform;
+		m_PoolParentPermanent = new GameObject("POOL_ROOT_PERMANENT").transform;
 		Object.DontDestroyOnLoad(m_PoolParentPermanent);
 	}
 
@@ -60,6 +61,17 @@ public class PoolMgr : SingletonBase<PoolMgr>
 	{
 		string poolName = GetPoolName(PoolType.Addressables, customPoolName ?? location.PrimaryKey);
 		return await FetchAsync(poolName, location, AddressablesLoadAsync);
+	}
+
+	/// <summary>
+	/// 向Addressables缓存池归还对象
+	/// </summary>
+	/// <param name="addressablesKey">Addressables资源Key</param>
+	/// <param name="obj">待归还的物体</param>
+	public void Store(string addressablesKey, GameObject obj)
+	{
+		string poolName = GetPoolName(PoolType.Addressables, addressablesKey);
+		StoreInternal(poolName, obj);
 	}
 
 	#endregion
@@ -120,41 +132,87 @@ public class PoolMgr : SingletonBase<PoolMgr>
 		return obj;
 	}
 
+	/// <summary>
+	/// 向Addressables缓存池归还对象
+	/// </summary>
+	/// <param name="resourcesPath">Resources文件夹中的资源路径</param>
+	/// <param name="obj">待归还的物体</param>
+	public void StoreResources(string resourcesPath, GameObject obj)
+	{
+		string poolName = GetPoolName(PoolType.Resources, resourcesPath);
+		StoreInternal(poolName, obj);
+	}
+
 	#endregion
 
 	/// <summary>
-	/// 向缓存池归还对象
+	/// 清除单个缓存池中的内容
 	/// </summary>
-	/// <param name="resPath">Resources文件夹中的资源路径</param>
-	/// <param name="obj">待归还的物体</param>
-	public void Store(string resPath, GameObject obj)
+	/// <param name="poolType">缓存池类型</param>
+	/// <param name="key">缓存池名称键 一般是资源路径</param>
+	public void Clear(PoolType poolType, string key)
 	{
-		if (!m_Pools.ContainsKey(resPath))
+		string poolName = GetPoolName(poolType, key);
+		if (!m_Pools.TryGetValue(poolName, out var pool))
+			return;
+		pool.Dispose();
+	}
+
+	/// <summary>
+	/// 清除单个缓存池中的内容
+	/// </summary>
+	/// <param name="key">缓存池名称键 可猜测类型</param>
+	/// <exception cref="System.ArgumentException">存在多个可能与key匹配的缓存池</exception>
+	public void Clear(string key)
+	{
+		if (!m_Pools.TryGetValue(key, out var pool))
 		{
-			// 创建缓存池和场景上的父对象
-			GameObject parent = new(resPath);
-			parent.transform.SetParent(m_PoolParent.transform);
-			m_Pools.Add(resPath, new Pool(resPath));
+			string[] possibleKeys = { GetPoolName(PoolType.Addressables, key), GetPoolName(PoolType.Resources, key), GetPoolName(PoolType.Temporary, key) };
+			string[] existKeys = possibleKeys.Where(possibleKey => m_Pools.ContainsKey(possibleKey)).ToArray();
+			switch (existKeys.Length)
+			{
+			case 0:
+				return;
+			case > 1:
+				throw new System.ArgumentException("Multiple pools found for key: " + key);
+			default:
+				pool = m_Pools[existKeys[0]];
+				break;
+			}
 		}
-		m_Pools[resPath].Push(obj);
+		pool.Dispose();
 	}
 
 	/// <summary>
 	/// 清除缓存池中的全部内容
 	/// </summary>
-	public void Clear()
+	public void ClearAll()
 	{
-		foreach (string resPath in m_Pools.Keys)
-			Clear(resPath);
+		Pool[] pools = m_Pools.Values.ToArray();
+		foreach (Pool pool in pools)
+			pool.Dispose();
 	}
+
 	/// <summary>
-	/// 清除单个缓存池中的内容
+	/// 获取缓存池中对象的数量
 	/// </summary>
-	public void Clear(string resPath)
+	/// <param name="poolType">缓存池类型</param>
+	/// <param name="key">缓存池名称键 一般是资源路径</param>
+	public int GetObjectCount(PoolType poolType, string key)
 	{
-		if (!m_Pools.ContainsKey(resPath)) return;
-		Object.Destroy(m_Pools[resPath].parent.gameObject);
-		m_Pools.Remove(resPath);
+		string poolName = GetPoolNameCheckPrefix(poolType, key);
+		return m_Pools.TryGetValue(poolName, out var pool) ? pool.Count : 0;
+	}
+
+	/// <summary>
+	/// 判断缓存池是否存在
+	/// </summary>
+	/// <param name="poolType">缓存池类型</param>
+	/// <param name="key">缓存池名称键 一般是资源路径</param>
+	public bool IsPoolExist(PoolType poolType, string key)
+	{
+		string poolName = GetPoolNameCheckPrefix(poolType, key);
+		return m_Pools.ContainsKey(poolName);
 	}
 
 	#region 缓存池名称相关
@@ -197,12 +255,24 @@ public class PoolMgr : SingletonBase<PoolMgr>
 
 	#endregion
 
+	#region 内部实现
+
 	private GameObject Fetch(string poolName, string resPath, System.Func<string, GameObject> createFunc)
 	{
 		if (!m_Pools.TryGetValue(poolName, out Pool pool))
 			pool = m_Pools[poolName] = new Pool(poolName);
 
-		GameObject ret = pool.Count > 0 ? pool.Pop() : createFunc(resPath);
+		GameObject ret;
+		if (pool.Count > 0)
+		{
+			ret = pool.Pop();
+		}
+		else
+		{
+			GameObject prefab = createFunc(resPath);
+			ret = Object.Instantiate(prefab, pool.parent);
+		}
+
 		ret.name = poolName;
 		return ret;
 	}
@@ -212,23 +282,40 @@ public class PoolMgr : SingletonBase<PoolMgr>
 		if (!m_Pools.TryGetValue(poolName, out Pool pool))
 			pool = m_Pools[poolName] = new Pool(poolName);
 
-		GameObject ret = pool.Count > 0 ? pool.Pop() : await createFunc(resPath);
+		GameObject ret;
+		if (pool.Count > 0)
+		{
+			ret = pool.Pop();
+		}
+		else
+		{
+			GameObject prefab = await createFunc(resPath);
+			ret = Object.Instantiate(prefab, pool.parent);
+		}
+
 		ret.name = poolName;
 		return ret;
 	}
 
-	private async UniTask<GameObject> ResourcesLoadAsync(string resourcesPath)
+	private void StoreInternal(string poolName, GameObject obj)
+	{
+		if (!m_Pools.TryGetValue(poolName, out var pool))
+			pool = m_Pools[poolName] = new Pool(poolName);
+		pool.Push(obj);
+	}
+
+	private static async UniTask<GameObject> ResourcesLoadAsync(string resourcesPath)
 	{
 		var ret = await Resources.LoadAsync<GameObject>(resourcesPath);
 		return ret as GameObject;
 	}
 
-	private async UniTask<GameObject> AddressablesLoadAsync(string addressablePath)
+	private static async UniTask<GameObject> AddressablesLoadAsync(string addressablePath)
 	{
 		var handle = Addressables.LoadAssetAsync<GameObject>(addressablePath);
 		return await handle.Task;
 	}
-	private async UniTask<GameObject> AddressablesLoadAsync(IResourceLocation resourceLocation)
+	private static async UniTask<GameObject> AddressablesLoadAsync(IResourceLocation resourceLocation)
 	{
 		var handle = Addressables.LoadAssetAsync<GameObject>(resourceLocation);
 		return await handle.Task;
@@ -241,10 +328,12 @@ public class PoolMgr : SingletonBase<PoolMgr>
 		obj.transform.SetPositionAndRotation(position, rotation);
 	}
 
-	private class Pool
+    #endregion
+
+	private class Pool : System.IDisposable
 	{
 		public readonly Transform parent;
-		public readonly string name;
+		private readonly string m_Name;
 
 		private readonly Stack<GameObject> m_Objects = new();
 		public int Count => m_Objects.Count;
@@ -252,9 +341,9 @@ public class PoolMgr : SingletonBase<PoolMgr>
 		public Pool(string poolName)
 		{
 			GameObject parentObj = new GameObject("POOL_" + poolName);
-			parentObj.transform.SetParent(PoolMgr.Instance.m_PoolParent.transform);
+			parentObj.transform.SetParent(PoolMgr.Instance.m_PoolParent);
 			parent = parentObj.transform;
-			name = poolName;
+			m_Name = poolName;
 		}
 		public void Push(GameObject obj, bool moveToParent = true)
 		{
@@ -269,6 +358,12 @@ public class PoolMgr : SingletonBase<PoolMgr>
 			GameObject ret = m_Objects.Pop();
 			ret.SetActive(true);
 			return ret;
+		}
+
+		public void Dispose()
+		{
+			Object.Destroy(parent.gameObject);
+			PoolMgr.Instance.m_Pools.Remove(m_Name);
 		}
 	}
 }
