@@ -1,0 +1,12 @@
+{
+  "version": "0.1",
+  "unityPackages": {
+    "com.cysharp.unitask": "https://github.com/Cysharp/UniTask.git?path=src/UniTask/Assets/Plugins/UniTask",
+    "com.unity.addressables": "1.22.3",
+    "com.unity.feature.development": "1.0.1",
+    "com.unity.mathematics": "1.2.6",
+    "com.unity.test-framework": "1.4.6",
+    "jp.hadashikick.vcontainer": "https://github.com/hadashiA/VContainer.git?path=VContainer/Assets/VContainer#1.16.5"
+  },
+  "nugetPackages": {}
+}
